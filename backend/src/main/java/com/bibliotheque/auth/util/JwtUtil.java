@@ -9,7 +9,7 @@ import javax.crypto.SecretKey;
 import java.util.Date;
 
 /**
- * Utilitaire pour gérer les JWT tokens.
+ * Utilitaire pour gérer les JWT tokens avec JJWT 0.11.5
  * Responsable de :
  * - Générer un token
  * - Valider un token
@@ -36,10 +36,10 @@ public class JwtUtil {
         SecretKey key = Keys.hmacShaKeyFor(secretKey.getBytes());
 
         return Jwts.builder()
-                .subject(email)
+                .setSubject(email)
                 .claim("role", role)
-                .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
     }
