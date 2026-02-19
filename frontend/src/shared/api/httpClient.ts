@@ -54,7 +54,7 @@ class HttpClient {
           if (token) {
             // Format : Bearer <token>
             config.headers.Authorization = `Bearer ${token}`;
-            console.log('Ì¥ê Token inject√© dans les headers');
+            console.log('Ì≥§ Token inject√© dans les headers');
           }
         } catch (error) {
           console.error('‚ùå Erreur lors de la r√©cup√©ration du token:', error);
@@ -92,14 +92,14 @@ class HttpClient {
   /**
    * POST - Envoyer des donn√©es (CREATE)
    */
-  post<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+  post<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
     return this.axiosInstance.post<T>(url, data, config).then((res) => res.data);
   }
 
   /**
    * PUT - Modifier des donn√©es (UPDATE)
    */
-  put<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+  put<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
     return this.axiosInstance.put<T>(url, data, config).then((res) => res.data);
   }
 

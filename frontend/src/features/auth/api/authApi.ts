@@ -28,6 +28,30 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
  * UTILISÉ PAR : RegisterScreen.tsx, LoginScreen.tsx, etc...
  */
 
+/**
+ * Helper: Extraire le message d'erreur d'une réponse axios
+ */
+function extractErrorMessage(error: unknown, defaultMessage: string): string {
+  if (
+    error &&
+    typeof error === 'object' &&
+    'response' in error &&
+    typeof (error as {response: unknown}).response === 'object' &&
+    (error as {response: {data?: unknown}}).response !== null
+  ) {
+    const responseData = (error as {response: {data: unknown}}).response.data;
+    if (
+      responseData &&
+      typeof responseData === 'object' &&
+      'error' in responseData &&
+      typeof (responseData as {error: unknown}).error === 'string'
+    ) {
+      return (responseData as {error: string}).error;
+    }
+  }
+  return defaultMessage;
+}
+
 class AuthApi {
   /**
    * REGISTER - Créer un compte
@@ -63,16 +87,13 @@ class AuthApi {
       console.log('✅ Infos utilisateur stockées');
 
       return response;
-    } catch (error: any) {
-      const message =
-        error.response?.data?.messages?.email ||
-        error.response?.data?.error ||
-        'Erreur lors de l\'inscription';
+    } catch (error: unknown) {
+      const message = extractErrorMessage(error, 'Erreur lors de l\'inscription');
 
       console.error('❌ Erreur REGISTER:', message);
       throw {
         error: message,
-        messages: error.response?.data?.messages || {},
+        messages: {},
       } as ApiError;
     }
   }
@@ -108,16 +129,13 @@ class AuthApi {
       console.log('✅ Infos utilisateur stockées');
 
       return response;
-    } catch (error: any) {
-      const message =
-        error.response?.data?.messages?.email ||
-        error.response?.data?.error ||
-        'Erreur lors de la connexion';
+    } catch (error: unknown) {
+      const message = extractErrorMessage(error, 'Erreur lors de la connexion');
 
       console.error('❌ Erreur LOGIN:', message);
       throw {
         error: message,
-        messages: error.response?.data?.messages || {},
+        messages: {},
       } as ApiError;
     }
   }

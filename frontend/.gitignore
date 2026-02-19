@@ -1,0 +1,106 @@
+# ==================
+# Dependencies
+# ==================
+node_modules/
+npm-debug.log*
+npm-debug.log.*
+yarn-error.log*
+yarn-debug.log*
+.pnpm-debug.log*
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# ==================
+# Build & Dist
+# ==================
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+
+# ==================
+# IDE (VS Code)
+# ==================
+.vscode/
+*.code-workspace
+.vscode-test/
+
+# ==================
+# IDE (IntelliJ / WebStorm)
+# ==================
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# ==================
+# IDE (Eclipse)
+# ==================
+.classpath
+.project
+.settings/
+
+# ==================
+# OS
+# ==================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ==================
+# Logs & Temp
+# ==================
+*.log
+*.log.*
+/logs/
+/tmp/
+
+# ==================
+# Environment
+# ==================
+.env
+.env.local
+.env.*.local
+.env.production.local
+.env.development.local
+.env.test.local
+
+# ==================
+# React Native / Expo
+# ==================
+.expo/
+.expo-shared/
+dist/
+npm-debug.*
+*.jsbundle
+*.bundle
+.gradle/
+local.properties
+*.keystore
+*.jks
+
+# ==================
+# Testing
+# ==================
+coverage/
+.nyc_output/
+
+# ==================
+# Misc
+# ==================
+.cache/
+.parcel-cache
+.eslintcache
+*.bak
+*.swp
+*.swo
+*~
+.venv
+venv/
