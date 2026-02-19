@@ -1,0 +1,91 @@
+# ==================
+# Maven & Build
+# ==================
+target/
+*.jar
+*.war
+*.ear
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+*.swp
+*.swo
+*~
+
+# ==================
+# IDE (IntelliJ IDEA)
+# ==================
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# ==================
+# IDE (Eclipse)
+# ==================
+.classpath
+.project
+.settings/
+*.launch
+
+# ==================
+# IDE (VS Code)
+# ==================
+.vscode/
+*.code-workspace
+
+# ==================
+# OS
+# ==================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ==================
+# Logs & Temp
+# ==================
+*.log
+*.log.*
+/logs/
+/tmp/
+
+# ==================
+# Environment & Config
+# ==================
+.env
+.env.local
+.env.*.local
+application-local.properties
+application-dev.properties
+
+# ==================
+# Database
+# ==================
+*.db
+*.sqlite
+*.h2.db
+
+# ==================
+# Dependencies
+# ==================
+/.m2/
+/dependency-reduced-pom.xml
+
+# ==================
+# Compiled files
+# ==================
+*.class
+*.classpath
+
+# ==================
+# Node (si utilisé)
+# ==================
+node_modules/
+npm-debug.log
+yarn-error.log
