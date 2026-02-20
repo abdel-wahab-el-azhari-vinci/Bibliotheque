@@ -25,7 +25,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
  */
 
 // Configuration globale
-const API_BASE_URL = 'http://localhost:8080/api';
+// 192.168.129.6:8080/api = Backend sur ordinateur local accessible par téléphone
+const API_BASE_URL = 'http://192.168.129.6:8080/api';
 const TOKEN_KEY = 'auth_token';
 const USER_KEY = 'user_info';
 

@@ -2,38 +2,52 @@
   "compilerOptions": {
     "target": "ES2020",
     "useDefineForClassFields": true,
-    "lib": ["ES2020"],
+    "lib": [
+      "ES2020"
+    ],
     "jsx": "react-native",
     "module": "ESNext",
-
-    /* Bundler mode */
     "moduleResolution": "node",
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-
-    /* Type checking */
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-
-    /* Type definitions - React Native */
     "skipLibCheck": true,
-    "types": ["react-native", "node", "@types/react", "@types/react-native"],
-
-    /* Path mapping */
+    "types": [
+      "react-native",
+      "node",
+      "@types/react",
+      "@types/react-native"
+    ],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"],
-      "@components/*": ["./src/shared/components/*"],
-      "@api/*": ["./src/shared/api/*"],
-      "@features/*": ["./src/features/*"]
+      "@/*": [
+        "./src/*"
+      ],
+      "@components/*": [
+        "./src/shared/components/*"
+      ],
+      "@api/*": [
+        "./src/shared/api/*"
+      ],
+      "@features/*": [
+        "./src/features/*"
+      ]
     }
   },
-  "include": ["src"],
-  "exclude": ["node_modules", "dist", "build"]
+  "include": [
+    "src"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build"
+  ],
+  "extends": "expo/tsconfig.base"
 }
