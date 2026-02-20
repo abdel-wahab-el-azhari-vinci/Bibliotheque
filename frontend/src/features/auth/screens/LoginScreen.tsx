@@ -2,36 +2,34 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { authApi } from '../api/authApi';
-import type { RegisterRequest } from '../types';
+import type { LoginRequest } from '../types';
 
 type RootStackParamList = {
   Login: undefined;
   Register: undefined;
 };
 
-type Props = NativeStackScreenProps<RootStackParamList, 'Register'>;
+type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
-export default function RegisterScreen({ navigation }: Props) {
+export default function LoginScreen({ navigation }: Props) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [nom, setNom] = useState('');
-  const [prenom, setPrenom] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleRegister = async () => {
-    if (!email || !password || !nom || !prenom) {
+  const handleLogin = async () => {
+    if (!email || !password) {
       Alert.alert('Erreur', 'Veuillez remplir tous les champs');
       return;
     }
 
     setLoading(true);
     try {
-      const data: RegisterRequest = { email, password, nom, prenom };
-      const response = await authApi.register(data);
-      Alert.alert('Succès', `Inscription réussie ! Bienvenue ${response.user.prenom}`);
+      const data: LoginRequest = { email, password };
+      const response = await authApi.login(data);
+      Alert.alert('Succès', `Bienvenue ${response.user.prenom}`);
       // Todo: Stocker le token et naviguer vers l'app
     } catch (error) {
-      Alert.alert('Erreur', 'Erreur lors de l\'inscription');
+      Alert.alert('Erreur', 'Identifiants invalides');
     } finally {
       setLoading(false);
     }
@@ -39,23 +37,7 @@ export default function RegisterScreen({ navigation }: Props) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>S'inscrire</Text>
-
-      <TextInput
-        style={styles.input}
-        placeholder="Prénom"
-        value={prenom}
-        onChangeText={setPrenom}
-        editable={!loading}
-      />
-
-      <TextInput
-        style={styles.input}
-        placeholder="Nom"
-        value={nom}
-        onChangeText={setNom}
-        editable={!loading}
-      />
+      <Text style={styles.title}>Connexion</Text>
 
       <TextInput
         style={styles.input}
@@ -76,14 +58,14 @@ export default function RegisterScreen({ navigation }: Props) {
 
       <TouchableOpacity
         style={[styles.button, loading && styles.buttonDisabled]}
-        onPress={handleRegister}
+        onPress={handleLogin}
         disabled={loading}
       >
-        <Text style={styles.buttonText}>{loading ? 'Inscription...' : 'S\'inscrire'}</Text>
+        <Text style={styles.buttonText}>{loading ? 'Connexion...' : 'Se connecter'}</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-        <Text style={styles.link}>Déjà inscrit ? Se connecter</Text>
+      <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+        <Text style={styles.link}>Pas de compte ? S'inscrire</Text>
       </TouchableOpacity>
     </View>
   );

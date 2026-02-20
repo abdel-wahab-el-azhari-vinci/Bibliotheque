@@ -5,49 +5,23 @@
     "lib": [
       "ES2020"
     ],
-    "jsx": "react-native",
+    "jsx": "react-jsx",
     "module": "ESNext",
     "moduleResolution": "node",
-    "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
     "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "skipLibCheck": true,
-    "types": [
-      "react-native",
-      "node",
-      "@types/react",
-      "@types/react-native"
-    ],
-    "baseUrl": ".",
-    "paths": {
-      "@/*": [
-        "./src/*"
-      ],
-      "@components/*": [
-        "./src/shared/components/*"
-      ],
-      "@api/*": [
-        "./src/shared/api/*"
-      ],
-      "@features/*": [
-        "./src/features/*"
-      ]
-    }
+    "skipLibCheck": true
   },
   "include": [
-    "src"
+    "src",
+    "index.js"
   ],
   "exclude": [
-    "node_modules",
-    "dist",
-    "build"
+    "node_modules"
   ],
   "extends": "expo/tsconfig.base"
 }

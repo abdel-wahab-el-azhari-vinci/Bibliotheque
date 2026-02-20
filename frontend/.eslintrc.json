@@ -8,10 +8,9 @@
   "extends": [
     "eslint:recommended",
     "plugin:react/recommended",
-    "plugin:react-hooks/recommended",
-    "plugin:@typescript-eslint/recommended"
+    "plugin:react-hooks/recommended"
   ],
-  "parser": "@typescript-eslint/parser",
+  "parser": "espree",
   "parserOptions": {
     "ecmaVersion": 2021,
     "sourceType": "module",
@@ -19,16 +18,10 @@
       "jsx": true
     }
   },
-  "plugins": ["react", "react-native", "react-hooks", "@typescript-eslint"],
+  "plugins": ["react", "react-native", "react-hooks"],
   "rules": {
     "react/react-in-jsx-scope": "off",
-    "react/prop-types": "off",
-    "@typescript-eslint/no-unused-vars": [
-      "warn",
-      {
-        "argsIgnorePattern": "^_"
-      }
-    ]
+    "react/prop-types": "off"
   },
   "settings": {
     "react": {
