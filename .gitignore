@@ -1,0 +1,97 @@
+# ==================
+# AI Rules & Documentation
+# ==================
+AI_RULES.md
+
+# ==================
+# IDE & Editor
+# ==================
+.vscode/
+.idea/
+*.code-workspace
+*.swp
+*.swo
+*~
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ==================
+# Node.js & npm
+# ==================
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+dist/
+build/
+
+# ==================
+# Python
+# ==================
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# ==================
+# Logs & Temp
+# ==================
+*.log
+*.log.*
+/logs/
+/tmp/
+/temp/
+
+# ==================
+# Environment & Config
+# ==================
+.env
+.env.local
+.env.*.local
+.env.test
+.env.production
+
+# ==================
+# Build & Dependencies
+# ==================
+target/
+build/
+dist/
+.gradle/
+.m2/
+
+# ==================
+# OS & System
+# ==================
+Thumbs.db
+.DS_Store
+
+# ==================
+# IDE Specific
+# ==================
+*.iml
+*.iws
+*.ipr
+out/
+.classpath
+.project
+.settings/
+*.launch
+
+# ==================
+# Database
+# ==================
+*.db
+*.sqlite
+*.h2.db
+*.sqlite3
