@@ -3,9 +3,11 @@ package com.bibliotheque.user.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
+import com.bibliotheque.shared.entity.*;
 
 /**
- * Entity représentant un utilisateur de l'application.
+ * Entity User - Utilisateur de l'application Terra Sana
+ * Conforme au schéma Terra Sana avec tous les champs géographiques
  * IMPORTANT : Le mot de passe est TOUJOURS stocké hashé (jamais en clair).
  */
 @Entity
@@ -46,10 +48,16 @@ public class User {
     private String prenom;
 
     /**
+     * Adresse postale
+     */
+    @Column(name = "rue", length = 255)
+    private String rue;
+
+    /**
      * Rôle de l'utilisateur (ADMIN, USER, LIBRARIAN)
      * Relation Many-to-One
      */
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "role_id", nullable = false)
     private Role role;
 
@@ -57,9 +65,40 @@ public class User {
      * Statut de l'utilisateur (ACTIF, INACTIF, SUSPENDU)
      * Relation Many-to-One
      */
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "status_id", nullable = false)
     private Status status;
+
+    /**
+     * Code postal de l'utilisateur
+     * Pour gérer sa localisation précise
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "code_postal_id")
+    private CodePostal codePostal;
+
+    /**
+     * Commune de l'utilisateur
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "commune_id")
+    private Commune commune;
+
+    /**
+     * Pays de l'utilisateur
+     * Important pour identifier son origine/destination géographique
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "pays_id")
+    private Pays pays;
+
+    /**
+     * Langue préférée de l'utilisateur
+     * Pour l'interface et les préférences de contenu
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "langue_id")
+    private Langue langue;
 
     /**
      * Date d'inscription du compte
