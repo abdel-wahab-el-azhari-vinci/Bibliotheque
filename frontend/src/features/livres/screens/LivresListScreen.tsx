@@ -277,7 +277,7 @@ export default function LivresListScreen({ navigation }: Props) {
         />
       )}
 
-      {/* Floating Action Button (FAB) */}
+      {/* Floating Action Button (FAB) - Clean */}
       <Animated.View style={[styles.fabContainer, { transform: [{ scale: fabScale }] }]}>
         <TouchableOpacity
           style={[styles.fab, commonStyles.shadowLarge]}
@@ -286,9 +286,6 @@ export default function LivresListScreen({ navigation }: Props) {
         >
           <Ionicons name="add" size={32} color={colors.white} />
         </TouchableOpacity>
-        <View style={styles.fabLabel}>
-          <Text style={styles.fabLabelText}>Ajouter</Text>
-        </View>
       </Animated.View>
     </View>
   );
@@ -526,13 +523,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: spacing.md,
   },
-  // FAB Styles
+  // FAB Styles - Clean and Simple
   fabContainer: {
     position: 'absolute',
     bottom: spacing.xl,
     right: spacing.lg,
-    alignItems: 'flex-end',
-    gap: spacing.sm,
   },
   fab: {
     width: 64,
@@ -541,17 +536,5 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  fabLabel: {
-    backgroundColor: colors.dark,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: 4,
-    marginRight: spacing.sm,
-  },
-  fabLabelText: {
-    color: colors.white,
-    fontSize: fontSizes.xs,
-    fontWeight: fontWeights.bold,
   },
 });
