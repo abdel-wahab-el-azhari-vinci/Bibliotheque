@@ -1,8 +1,15 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { authApi } from '../api/authApi';
-import type { LoginRequest } from '../types';
+import { useAuth } from '../context/AuthContext';
 
 type RootStackParamList = {
   Login: undefined;
@@ -12,24 +19,31 @@ type RootStackParamList = {
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
 export default function LoginScreen({ navigation }: Props) {
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
+    // Validation
     if (!email || !password) {
       Alert.alert('Erreur', 'Veuillez remplir tous les champs');
       return;
     }
 
+    if (!email.includes('@')) {
+      Alert.alert('Erreur', 'Email invalide');
+      return;
+    }
+
     setLoading(true);
     try {
-      const data: LoginRequest = { email, password };
-      const response = await authApi.login(data);
-      Alert.alert('Succès', `Bienvenue ${response.user.prenom}`);
-      // Todo: Stocker le token et naviguer vers l'app
-    } catch (error) {
-      Alert.alert('Erreur', 'Identifiants invalides');
+      await login(email, password);
+      // ✅ Navigation auto vers app (géré par RootNavigator)
+    } catch (error: any) {
+      const message = error?.response?.data?.message || 'Identifiants invalides';
+      Alert.alert('Erreur de connexion', message);
+      setPassword('');
     } finally {
       setLoading(false);
     }
@@ -37,16 +51,21 @@ export default function LoginScreen({ navigation }: Props) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Connexion</Text>
+      <Text style={styles.title}>Terra Sana</Text>
+      <Text style={styles.subtitle}>Gestion de Bibliothèque</Text>
 
+      {/* Email */}
       <TextInput
         style={styles.input}
         placeholder="Email"
         value={email}
         onChangeText={setEmail}
         editable={!loading}
+        keyboardType="email-address"
+        autoCapitalize="none"
       />
 
+      {/* Password */}
       <TextInput
         style={styles.input}
         placeholder="Mot de passe"
@@ -56,17 +75,26 @@ export default function LoginScreen({ navigation }: Props) {
         editable={!loading}
       />
 
+      {/* Login Button */}
       <TouchableOpacity
         style={[styles.button, loading && styles.buttonDisabled]}
         onPress={handleLogin}
         disabled={loading}
       >
-        <Text style={styles.buttonText}>{loading ? 'Connexion...' : 'Se connecter'}</Text>
+        {loading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.buttonText}>Se connecter</Text>
+        )}
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-        <Text style={styles.link}>Pas de compte ? S'inscrire</Text>
-      </TouchableOpacity>
+      {/* Register Link */}
+      <View style={styles.registerContainer}>
+        <Text style={styles.registerText}>Pas de compte ? </Text>
+        <TouchableOpacity onPress={() => navigation.navigate('Register')} disabled={loading}>
+          <Text style={styles.registerLink}>S'inscrire</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -79,10 +107,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
-    marginBottom: 20,
+    marginBottom: 4,
     textAlign: 'center',
+    color: '#007AFF',
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 40,
   },
   input: {
     borderWidth: 1,
@@ -90,25 +125,35 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 12,
     borderRadius: 8,
+    fontSize: 14,
   },
   button: {
     backgroundColor: '#007AFF',
-    padding: 12,
+    padding: 14,
     borderRadius: 8,
     alignItems: 'center',
-    marginTop: 12,
+    marginTop: 16,
+    height: 48,
+    justifyContent: 'center',
   },
   buttonDisabled: {
-    opacity: 0.5,
+    opacity: 0.6,
   },
   buttonText: {
     color: '#fff',
+    fontSize: 16,
     fontWeight: 'bold',
   },
-  link: {
+  registerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 20,
+  },
+  registerText: {
+    color: '#666',
+  },
+  registerLink: {
     color: '#007AFF',
-    textAlign: 'center',
-    marginTop: 12,
-    textDecorationLine: 'underline',
+    fontWeight: 'bold',
   },
 });
