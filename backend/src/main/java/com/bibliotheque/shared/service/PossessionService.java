@@ -2,7 +2,7 @@ package com.bibliotheque.shared.service;
 
 import com.bibliotheque.shared.entity.Possession;
 import com.bibliotheque.shared.entity.Livre;
-import com.bibliotheque.shared.entity.User;
+import com.bibliotheque.user.entity.User;
 import com.bibliotheque.shared.repository.PossessionRepository;
 import com.bibliotheque.shared.repository.LivreRepository;
 import com.bibliotheque.user.repository.UserRepository;
@@ -43,7 +43,7 @@ public class PossessionService {
         Possession possession = new Possession();
         possession.setLivre(livre);
         possession.setUser(user);
-        possession.setDateAcquisition(LocalDate.now());
+        possession.setDateEmprunt(LocalDate.now());
         possession.setDateRetour(null); // En stock
         
         return possessionRepository.save(possession);
