@@ -11,12 +11,20 @@ import {
   RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { livresApi } from '../api/livresApi';
 import { useAuth } from '../../auth/context/AuthContext';
 import { colors, spacing, fontSizes, fontWeights, commonStyles } from '../../../theme';
 import type { Livre } from '../types';
 
-export default function LivresListScreen() {
+type RootStackParamList = {
+  LivresList: undefined;
+  LivreDetail: { id: number };
+};
+
+type Props = NativeStackScreenProps<RootStackParamList, 'LivresList'>;
+
+export default function LivresListScreen({ navigation }: Props) {
   const { user, logout } = useAuth();
   const [livres, setLivres] = useState<Livre[]>([]);
   const [loading, setLoading] = useState(true);
@@ -88,7 +96,11 @@ export default function LivresListScreen() {
   };
 
   const renderLivreItem = ({ item }: { item: Livre }) => (
-    <TouchableOpacity style={[styles.livreCard, commonStyles.shadow]}>
+    <TouchableOpacity
+      style={[styles.livreCard, commonStyles.shadow]}
+      activeOpacity={0.7}
+      onPress={() => navigation.navigate('LivreDetail', { id: item.id })}
+    >
       {/* Book Icon */}
       <View style={styles.bookIconContainer}>
         <Ionicons name="book" size={32} color={colors.primary} />
@@ -142,8 +154,9 @@ export default function LivresListScreen() {
           styles.actionButton,
           item.statusStock !== 'EN_STOCK' && styles.actionButtonDisabled,
         ]}
+        onPress={() => navigation.navigate('LivreDetail', { id: item.id })}
       >
-        <Ionicons name="add-circle-outline" size={24} color={colors.white} />
+        <Ionicons name="chevron-forward" size={24} color={colors.white} />
       </TouchableOpacity>
     </TouchableOpacity>
   );

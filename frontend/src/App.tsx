@@ -6,11 +6,15 @@ import { AuthProvider, useAuth } from './features/auth/context/AuthContext';
 import LoginScreen from './features/auth/screens/LoginScreen';
 import RegisterScreen from './features/auth/screens/RegisterScreen';
 import LivresListScreen from './features/livres/screens/LivresListScreen';
+import LivreDetailScreen from './features/livres/screens/LivreDetailScreen';
+import PossessionListScreen from './features/livres/screens/PossessionListScreen';
 
 type RootStackParamList = {
   Login: undefined;
   Register: undefined;
   LivresList: undefined;
+  LivreDetail: { id: number };
+  Possessions: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -30,6 +34,8 @@ function AppStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="LivresList" component={LivresListScreen} />
+      <Stack.Screen name="LivreDetail" component={LivreDetailScreen} />
+      <Stack.Screen name="Possessions" component={PossessionListScreen} />
     </Stack.Navigator>
   );
 }
