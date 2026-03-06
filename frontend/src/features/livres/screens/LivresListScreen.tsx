@@ -194,12 +194,6 @@ export default function LivresListScreen({ navigation }: Props) {
           <Text style={styles.headerTitle}>Bibliothèque</Text>
         </View>
         <View style={styles.headerRight}>
-          <TouchableOpacity 
-            onPress={handleAddLivre}
-            style={styles.headerAddButton}
-          >
-            <Ionicons name="add-circle" size={28} color={colors.white} />
-          </TouchableOpacity>
           <TouchableOpacity onPress={handleLogout} style={{ marginLeft: spacing.md }}>
             <Ionicons name="log-out-outline" size={24} color={colors.white} />
           </TouchableOpacity>
@@ -328,9 +322,6 @@ const styles = StyleSheet.create({
     fontSize: fontSizes['2xl'],
     fontWeight: fontWeights.bold,
     color: colors.white,
-  },
-  headerAddButton: {
-    padding: spacing.sm,
   },
   userCard: {
     backgroundColor: colors.white,
