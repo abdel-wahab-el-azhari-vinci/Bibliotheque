@@ -27,19 +27,33 @@ type Props = NativeStackScreenProps<RootStackParamList, 'LivresList'>;
 export default function LivresListScreen({ navigation }: Props) {
   const { user, logout } = useAuth();
   const [livres, setLivres] = useState<Livre[]>([]);
+  const [originalLivres, setOriginalLivres] = useState<Livre[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [searching, setSearching] = useState(false);
   const [searchText, setSearchText] = useState('');
 
   useEffect(() => {
     loadLivres();
   }, []);
 
+  // Filtre en temps réel
+  useEffect(() => {
+    if (!searchText.trim()) {
+      setLivres(originalLivres);
+    } else {
+      const filtered = originalLivres.filter(livre =>
+        livre.titre.toLowerCase().startsWith(searchText.toLowerCase()) ||
+        livre.auteurNom.toLowerCase().startsWith(searchText.toLowerCase())
+      );
+      setLivres(filtered);
+    }
+  }, [searchText, originalLivres]);
+
   const loadLivres = async () => {
     try {
       setLoading(true);
       const data = await livresApi.getAll();
+      setOriginalLivres(data);
       setLivres(data);
     } catch (error) {
       Alert.alert('Erreur', 'Impossible de charger les livres');
@@ -53,28 +67,13 @@ export default function LivresListScreen({ navigation }: Props) {
     setRefreshing(true);
     try {
       const data = await livresApi.getAll();
+      setOriginalLivres(data);
       setLivres(data);
+      setSearchText('');
     } catch (error) {
       Alert.alert('Erreur', 'Impossible de recharger les livres');
     } finally {
       setRefreshing(false);
-    }
-  };
-
-  const handleSearch = async () => {
-    if (!searchText.trim()) {
-      loadLivres();
-      return;
-    }
-
-    try {
-      setSearching(true);
-      const data = await livresApi.search(searchText);
-      setLivres(data);
-    } catch (error) {
-      Alert.alert('Erreur', 'Recherche échouée');
-    } finally {
-      setSearching(false);
     }
   };
 
@@ -103,7 +102,7 @@ export default function LivresListScreen({ navigation }: Props) {
     >
       {/* Book Icon */}
       <View style={styles.bookIconContainer}>
-        <Ionicons name="book" size={32} color={colors.primary} />
+        <Ionicons name="book" size={32} color={colors.white} />
       </View>
 
       {/* Book Content */}
@@ -121,42 +120,56 @@ export default function LivresListScreen({ navigation }: Props) {
             <Text style={styles.metaText}>{item.genreLibelle}</Text>
           </View>
         </View>
-
-        {/* ISBN */}
         <View style={styles.isbnContainer}>
           <Text style={styles.isbnLabel}>ISBN: </Text>
-          <Text style={styles.isbnValue}>{item.isbn || 'N/A'}</Text>
+          <Text style={styles.isbnValue}>{item.isbn}</Text>
         </View>
-
-        {/* Stock Status */}
         <View style={styles.statusContainer}>
-          {item.statusStock === 'EN_STOCK' ? (
-            <View style={[styles.status, styles.statusReady]}>
-              <Ionicons name="checkmark-circle" size={14} color={colors.success} />
-              <Text style={[styles.statusText, styles.statusTextReady]}>
-                {item.nbExemplairesDisponibles} disponible(s)
-              </Text>
-            </View>
-          ) : (
-            <View style={[styles.status, styles.statusUnavailable]}>
-              <Ionicons name="close-circle" size={14} color={colors.danger} />
-              <Text style={[styles.statusText, styles.statusTextUnavailable]}>
-                Non disponible
-              </Text>
-            </View>
-          )}
+          <View
+            style={[
+              styles.status,
+              item.statusStock === 'EN_STOCK' ? styles.statusReady : styles.statusUnavailable,
+            ]}
+          >
+            <Ionicons
+              name={item.statusStock === 'EN_STOCK' ? 'checkmark-circle' : 'close-circle'}
+              size={14}
+              color={item.statusStock === 'EN_STOCK' ? colors.success : colors.danger}
+            />
+            <Text
+              style={[
+                styles.statusText,
+                item.statusStock === 'EN_STOCK' ? styles.statusTextReady : styles.statusTextUnavailable,
+              ]}
+            >
+              {item.statusStock === 'EN_STOCK' ? 'En stock' : 'Non disponible'}
+            </Text>
+          </View>
         </View>
       </View>
 
-      {/* Action Button */}
+      {/* Detail Button - Amélioré */}
       <TouchableOpacity
         style={[
           styles.actionButton,
           item.statusStock !== 'EN_STOCK' && styles.actionButtonDisabled,
         ]}
         onPress={() => navigation.navigate('LivreDetail', { id: item.id })}
+        activeOpacity={0.7}
       >
-        <Ionicons name="chevron-forward" size={24} color={colors.white} />
+        <View style={styles.actionButtonContent}>
+          <Ionicons 
+            name="chevron-forward" 
+            size={20} 
+            color={item.statusStock === 'EN_STOCK' ? colors.white : colors.gray}
+          />
+          <Text style={[
+            styles.actionButtonText,
+            item.statusStock !== 'EN_STOCK' && styles.actionButtonTextDisabled
+          ]}>
+            Détails
+          </Text>
+        </View>
       </TouchableOpacity>
     </TouchableOpacity>
   );
@@ -187,47 +200,44 @@ export default function LivresListScreen({ navigation }: Props) {
             <Text style={styles.userEmail}>{user.email}</Text>
           </View>
           <View style={styles.userBadge}>
-            <Ionicons name="checkmark-outline" size={16} color={colors.success} />
+            <Ionicons name="checkmark-outline" size={16} color={colors.white} />
             <Text style={styles.userBadgeText}>Actif</Text>
           </View>
         </View>
       )}
 
-      {/* Search bar */}
+      {/* Search bar - Sans bouton, recherche en temps réel */}
       <View style={styles.searchSection}>
         <View style={styles.searchContainer}>
           <Ionicons
             name="search-outline"
             size={20}
-            color={colors.gray}
+            color={colors.primary}
             style={styles.searchIcon}
           />
           <TextInput
             style={styles.input}
-            placeholder="Rechercher par titre..."
+            placeholder="Rechercher un livre ou un auteur..."
             placeholderTextColor={colors.gray}
             value={searchText}
             onChangeText={setSearchText}
-            editable={!searching}
           />
-          {searchText.length > 0 && !searching && (
+          {searchText.length > 0 && (
             <TouchableOpacity onPress={() => setSearchText('')}>
-              <Ionicons name="close-circle" size={20} color={colors.gray} />
+              <Ionicons name="close-circle" size={20} color={colors.primary} />
             </TouchableOpacity>
           )}
         </View>
-        <TouchableOpacity
-          style={[styles.searchBtn, searching && styles.disabled]}
-          onPress={handleSearch}
-          disabled={searching}
-        >
-          {searching ? (
-            <ActivityIndicator color={colors.white} />
-          ) : (
-            <Ionicons name="search" size={20} color={colors.white} />
-          )}
-        </TouchableOpacity>
       </View>
+
+      {/* Results info */}
+      {searchText.length > 0 && (
+        <View style={styles.resultsInfo}>
+          <Text style={styles.resultsText}>
+            {livres.length} livre{livres.length !== 1 ? 's' : ''} trouvé{livres.length !== 1 ? 's' : ''}
+          </Text>
+        </View>
+      )}
 
       {/* Livres list */}
       {loading ? (
@@ -239,7 +249,9 @@ export default function LivresListScreen({ navigation }: Props) {
       ) : livres.length === 0 ? (
         <View style={styles.centerContent}>
           <Ionicons name="book-outline" size={48} color={colors.lightGray} />
-          <Text style={styles.noData}>Aucun livre trouvé</Text>
+          <Text style={styles.noData}>
+            {searchText ? 'Aucun livre ne correspond à votre recherche' : 'Aucun livre trouvé'}
+          </Text>
         </View>
       ) : (
         <FlatList
@@ -288,6 +300,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.primary,
   },
   userAvatar: {
     justifyContent: 'center',
@@ -307,34 +321,31 @@ const styles = StyleSheet.create({
     color: colors.gray,
   },
   userBadge: {
-    backgroundColor: colors.success + '15',
+    backgroundColor: colors.success,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
-    borderRadius: 4,
+    borderRadius: 12,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
   },
   userBadgeText: {
     fontSize: fontSizes.xs,
-    color: colors.success,
+    color: colors.white,
     fontWeight: fontWeights.bold,
   },
   searchSection: {
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    flexDirection: 'row',
-    gap: spacing.md,
   },
   searchContainer: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.white,
     borderRadius: 8,
     paddingHorizontal: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderWidth: 2,
+    borderColor: colors.primary,
     ...commonStyles.shadow,
   },
   searchIcon: {
@@ -346,17 +357,14 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.base,
     color: colors.dark,
   },
-  searchBtn: {
-    backgroundColor: colors.primary,
-    width: 44,
-    height: 44,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...commonStyles.shadow,
+  resultsInfo: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.sm,
   },
-  disabled: {
-    opacity: 0.6,
+  resultsText: {
+    fontSize: fontSizes.sm,
+    color: colors.gray,
+    fontWeight: fontWeights.semibold,
   },
   centerContent: {
     flex: 1,
@@ -381,7 +389,7 @@ const styles = StyleSheet.create({
   bookIconContainer: {
     width: 50,
     height: 50,
-    backgroundColor: colors.primary + '10',
+    backgroundColor: colors.primary,
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
@@ -435,32 +443,45 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   statusReady: {
-    backgroundColor: colors.success + '15',
+    backgroundColor: colors.success,
   },
   statusUnavailable: {
-    backgroundColor: colors.danger + '15',
+    backgroundColor: colors.danger,
   },
   statusText: {
     fontSize: fontSizes.xs,
     fontWeight: fontWeights.bold,
   },
   statusTextReady: {
-    color: colors.success,
+    color: colors.white,
   },
   statusTextUnavailable: {
-    color: colors.danger,
+    color: colors.white,
   },
   actionButton: {
     backgroundColor: colors.primary,
-    width: 40,
-    height: 40,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
     ...commonStyles.shadow,
   },
+  actionButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  actionButtonText: {
+    color: colors.white,
+    fontSize: fontSizes.sm,
+    fontWeight: fontWeights.semibold,
+  },
   actionButtonDisabled: {
     backgroundColor: colors.lightGray,
+  },
+  actionButtonTextDisabled: {
+    color: colors.gray,
   },
   loadingText: {
     fontSize: fontSizes.base,
