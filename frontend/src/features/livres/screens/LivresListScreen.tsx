@@ -387,7 +387,7 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    paddingBottom: spacing.xxl,
+    paddingBottom: 130, // Space for FAB
   },
   livreCard: {
     backgroundColor: colors.white,
