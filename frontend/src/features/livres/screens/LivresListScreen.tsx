@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Alert,
   RefreshControl,
+  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -32,6 +33,7 @@ export default function LivresListScreen({ navigation }: Props) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState('');
+  const fabScale = new Animated.Value(1);
 
   useEffect(() => {
     loadLivres();
@@ -95,6 +97,14 @@ export default function LivresListScreen({ navigation }: Props) {
     ]);
   };
 
+  const handleAddLivre = () => {
+    Animated.sequence([
+      Animated.timing(fabScale, { toValue: 0.9, duration: 100, useNativeDriver: true }),
+      Animated.timing(fabScale, { toValue: 1, duration: 100, useNativeDriver: true }),
+    ]).start();
+    navigation.navigate('LivreAdd');
+  };
+
   const renderLivreItem = ({ item }: { item: Livre }) => (
     <TouchableOpacity
       style={[styles.livreCard, commonStyles.shadow]}
@@ -149,7 +159,7 @@ export default function LivresListScreen({ navigation }: Props) {
         </View>
       </View>
 
-      {/* Detail Button - Amélioré */}
+      {/* Detail Button */}
       <TouchableOpacity
         style={[
           styles.actionButton,
@@ -184,8 +194,11 @@ export default function LivresListScreen({ navigation }: Props) {
           <Text style={styles.headerTitle}>Bibliothèque</Text>
         </View>
         <View style={styles.headerRight}>
-          <TouchableOpacity onPress={() => navigation.navigate('LivreAdd')}>
-            <Ionicons name="add-circle" size={24} color={colors.white} />
+          <TouchableOpacity 
+            onPress={handleAddLivre}
+            style={styles.headerAddButton}
+          >
+            <Ionicons name="add-circle" size={28} color={colors.white} />
           </TouchableOpacity>
           <TouchableOpacity onPress={handleLogout} style={{ marginLeft: spacing.md }}>
             <Ionicons name="log-out-outline" size={24} color={colors.white} />
@@ -212,7 +225,7 @@ export default function LivresListScreen({ navigation }: Props) {
         </View>
       )}
 
-      {/* Search bar - Sans bouton, recherche en temps réel */}
+      {/* Search bar */}
       <View style={styles.searchSection}>
         <View style={styles.searchContainer}>
           <Ionicons
@@ -269,6 +282,20 @@ export default function LivresListScreen({ navigation }: Props) {
           showsVerticalScrollIndicator={false}
         />
       )}
+
+      {/* Floating Action Button (FAB) */}
+      <Animated.View style={[styles.fabContainer, { transform: [{ scale: fabScale }] }]}>
+        <TouchableOpacity
+          style={[styles.fab, commonStyles.shadowLarge]}
+          onPress={handleAddLivre}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="add" size={32} color={colors.white} />
+        </TouchableOpacity>
+        <View style={styles.fabLabel}>
+          <Text style={styles.fabLabelText}>Ajouter</Text>
+        </View>
+      </Animated.View>
     </View>
   );
 }
@@ -301,6 +328,9 @@ const styles = StyleSheet.create({
     fontSize: fontSizes['2xl'],
     fontWeight: fontWeights.bold,
     color: colors.white,
+  },
+  headerAddButton: {
+    padding: spacing.sm,
   },
   userCard: {
     backgroundColor: colors.white,
@@ -502,6 +532,35 @@ const styles = StyleSheet.create({
   noData: {
     fontSize: fontSizes.base,
     color: colors.gray,
-    marginTop: spacing.lg,
+    textAlign: 'center',
+    marginTop: spacing.md,
+  },
+  // FAB Styles
+  fabContainer: {
+    position: 'absolute',
+    bottom: spacing.xl,
+    right: spacing.lg,
+    alignItems: 'flex-end',
+    gap: spacing.sm,
+  },
+  fab: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fabLabel: {
+    backgroundColor: colors.dark,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: 4,
+    marginRight: spacing.sm,
+  },
+  fabLabelText: {
+    color: colors.white,
+    fontSize: fontSizes.xs,
+    fontWeight: fontWeights.bold,
   },
 });
