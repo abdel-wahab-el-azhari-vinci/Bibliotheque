@@ -277,7 +277,7 @@ export default function LivresListScreen({ navigation }: Props) {
         />
       )}
 
-      {/* Floating Action Button (FAB) - Clean */}
+      {/* Floating Action Button (FAB) */}
       <Animated.View style={[styles.fabContainer, { transform: [{ scale: fabScale }] }]}>
         <TouchableOpacity
           style={[styles.fab, commonStyles.shadowLarge]}
@@ -404,7 +404,7 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    paddingBottom: spacing.xxl,
+    paddingBottom: 100,
   },
   livreCard: {
     backgroundColor: colors.white,
@@ -523,11 +523,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: spacing.md,
   },
-  // FAB Styles - Clean and Simple
+  // FAB Styles - Positioned Properly
   fabContainer: {
     position: 'absolute',
-    bottom: spacing.xl,
-    right: spacing.lg,
+    bottom: 24,
+    right: 24,
   },
   fab: {
     width: 64,
