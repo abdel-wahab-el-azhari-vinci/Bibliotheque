@@ -1,28 +1,29 @@
 package com.bibliotheque.shared.service;
-import com.bibliotheque.user.entity.User;
 
-import com.bibliotheque.shared.entity.*;
-import com.bibliotheque.shared.repository.*;
+import com.bibliotheque.shared.entity.Possession;
+import com.bibliotheque.shared.entity.Livre;
+import com.bibliotheque.shared.entity.User;
+import com.bibliotheque.shared.repository.PossessionRepository;
+import com.bibliotheque.shared.repository.LivreRepository;
 import com.bibliotheque.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.time.LocalDate;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 /**
- * Service Possession - TABLE PIVOT CRITIQUE
- * Gère la logique de stock et les mouvements des livres dans Terra Sana
+ * Service PossessionService
+ * Gestion de l'inventaire (stock de livres)
  * 
- * Logique d'inventaire:
- * - dateRetour = NULL → Livre EN STOCK (disponible)
- * - dateRetour != NULL → Livre SORTI (prêté, donné, etc.)
- * 
- * Cette classe est le cœur du projet d'inventaire mobile
+ * CRITICAL: Possession = exemplaire physique d'un Livre
+ * Logique: dateRetour = NULL → EN_STOCK | dateRetour != NULL → SORTI
  */
 @Service
-@RequiredArgsConstructor
 @Transactional
+@RequiredArgsConstructor
 public class PossessionService {
     
     private final PossessionRepository possessionRepository;
@@ -30,139 +31,95 @@ public class PossessionService {
     private final UserRepository userRepository;
     
     /**
-     * Enregistrer un livre ENTRANT dans le stock
-     * (Nouvel ouvrage reçu, donation, etc.)
-     * 
-     * @param livreId ID du livre
-     * @param dateArrivee Date d'arrivée/emprunt
-     * @return La possession enregistrée
+     * Ajouter un exemplaire au stock
      */
-    public Possession addLivreToStock(Long livreId, LocalDate dateArrivee) {
-        
+    public Possession addLivreToStock(Long livreId, Long userId) {
         Livre livre = livreRepository.findById(livreId)
-            .orElseThrow(() -> new RuntimeException("Livre non trouvé"));
+            .orElseThrow(() -> new NoSuchElementException("Livre non trouvé"));
         
-        // Récupérer l'utilisateur admin/système
-        // Pour simplifier: utiliser user ID 1 (à adapter selon votre besoin)
-        User user = userRepository.findById(1L)
-            .orElseThrow(() -> new RuntimeException("Utilisateur système non trouvé"));
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new NoSuchElementException("Utilisateur non trouvé"));
         
         Possession possession = new Possession();
         possession.setLivre(livre);
         possession.setUser(user);
-        possession.setDateEmprunt(dateArrivee != null ? dateArrivee : LocalDate.now());
-        possession.setDateRetour(null); // NULL = EN STOCK
+        possession.setDateAcquisition(LocalDate.now());
+        possession.setDateRetour(null); // En stock
         
         return possessionRepository.save(possession);
     }
     
     /**
-     * Marquer un livre comme SORTI du stock
-     * (Prêt, donation, vente, destruction, etc.)
-     * 
-     * @param possessionId ID de la possession
-     * @param dateSortie Date de sortie
+     * Marquer un livre comme sorti/emprunté
      */
-    public void markAsOut(Long possessionId, LocalDate dateSortie) {
-        
+    public Possession markAsOut(Long possessionId, LocalDate dateRetour) {
         Possession possession = possessionRepository.findById(possessionId)
-            .orElseThrow(() -> new RuntimeException("Possession non trouvée"));
+            .orElseThrow(() -> new NoSuchElementException("Possession non trouvée"));
         
-        if (possession.getDateRetour() != null) {
-            throw new RuntimeException("Ce livre est déjà sorti du stock");
-        }
-        
-        if (dateSortie == null) {
-            dateSortie = LocalDate.now();
-        }
-        
-        // Vérifier que la date de sortie est après la date d'entrée
-        if (dateSortie.isBefore(possession.getDateEmprunt())) {
-            throw new RuntimeException("La date de sortie ne peut pas être avant la date d'arrivée");
-        }
-        
-        possession.setDateRetour(dateSortie);
-        possessionRepository.save(possession);
+        possession.setDateRetour(dateRetour != null ? dateRetour : LocalDate.now());
+        return possessionRepository.save(possession);
     }
     
     /**
-     * Marquer un livre comme RETOURNÉ en stock
-     * (Retour de prêt, etc.)
+     * Marquer un livre comme retourné
      */
-    public void markAsReturned(Long possessionId, LocalDate dateRetour) {
-        
+    public Possession markAsReturned(Long possessionId) {
         Possession possession = possessionRepository.findById(possessionId)
-            .orElseThrow(() -> new RuntimeException("Possession non trouvée"));
+            .orElseThrow(() -> new NoSuchElementException("Possession non trouvée"));
         
         if (possession.getDateRetour() != null) {
-            throw new RuntimeException("Ce livre est déjà marqué comme sorti");
+            throw new IllegalStateException("Ce livre est déjà marqué comme retourné");
         }
         
-        if (dateRetour == null) {
-            dateRetour = LocalDate.now();
-        }
-        
-        possession.setDateRetour(null); // NULL = EN STOCK à nouveau
-        possessionRepository.save(possession);
+        possession.setDateRetour(LocalDate.now());
+        return possessionRepository.save(possession);
     }
     
     /**
-     * Obtenir TOUS les livres actuellement EN STOCK
-     * Scène mobile: affichage du catalogue disponible
+     * Récupérer tous les livres EN STOCK
      */
     public List<Possession> getAllEnStock() {
         return possessionRepository.findAllEnStock();
     }
     
     /**
-     * Obtenir TOUS les livres actuellement SORTIS
+     * Récupérer tous les livres SORTIS
      */
     public List<Possession> getAllSortis() {
         return possessionRepository.findAllSortis();
     }
     
     /**
-     * Obtenir les livres EN STOCK d'un utilisateur spécifique
+     * Récupérer l'historique complet des mouvements
      */
-    public List<Possession> getUserEnStock(Long userId) {
-        return possessionRepository.findByUserIdEnStock(userId);
+    public List<Possession> getFullHistory(Long livreId) {
+        return possessionRepository.findByLivreId(livreId);
     }
     
     /**
-     * Obtenir les livres SORTIS d'un utilisateur spécifique
-     */
-    public List<Possession> getUserSortis(Long userId) {
-        return possessionRepository.findByUserIdSortis(userId);
-    }
-    
-    /**
-     * Déterminer le statut d'un livre (En stock / Sorti)
-     * @return "EN_STOCK" ou "SORTI"
+     * Récupérer le statut d'un livre
      */
     public String getStatus(Long livreId) {
-        
-        List<Possession> possessions = possessionRepository.findByLivreId(livreId);
-        
-        if (possessions.isEmpty()) {
+        if (possessionRepository.isLivreEnStock(livreId)) {
+            return "EN_STOCK";
+        } else if (possessionRepository.findByLivreId(livreId).isEmpty()) {
             return "AUCUN_EXEMPLAIRE";
+        } else {
+            return "SORTI";
         }
-        
-        boolean hasAvailable = possessions.stream().anyMatch(p -> p.getDateRetour() == null);
-        return hasAvailable ? "EN_STOCK" : "SORTI";
     }
     
     /**
-     * Compter les exemplaires DISPONIBLES d'un livre
+     * Compter les exemplaires disponibles
      */
-    public int countAvailable(Long livreId) {
+    public Integer countAvailable(Long livreId) {
         return possessionRepository.countEnStock(livreId);
     }
     
     /**
-     * Obtenir l'HISTORIQUE complet d'un livre
-     * (tous les mouvements: entrées, sorties, retours)
+     * Vérifier si un livre est en stock
      */
-    public List<Possession> getFullHistory(Long livreId) {
-        return possessionRepository.findByLivreId(livreId);
+    public boolean isLivreEnStock(Long livreId) {
+        return possessionRepository.isLivreEnStock(livreId);
     }
 }
