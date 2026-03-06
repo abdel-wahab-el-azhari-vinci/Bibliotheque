@@ -7,6 +7,7 @@ import LoginScreen from './features/auth/screens/LoginScreen';
 import RegisterScreen from './features/auth/screens/RegisterScreen';
 import LivresListScreen from './features/livres/screens/LivresListScreen';
 import LivreDetailScreen from './features/livres/screens/LivreDetailScreen';
+import LivreAddScreen from './features/livres/screens/LivreAddScreen';
 import PossessionListScreen from './features/livres/screens/PossessionListScreen';
 
 type RootStackParamList = {
@@ -14,6 +15,7 @@ type RootStackParamList = {
   Register: undefined;
   LivresList: undefined;
   LivreDetail: { id: number };
+  LivreAdd: undefined;
   Possessions: undefined;
 };
 
@@ -35,6 +37,7 @@ function AppStack() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="LivresList" component={LivresListScreen} />
       <Stack.Screen name="LivreDetail" component={LivreDetailScreen} />
+      <Stack.Screen name="LivreAdd" component={LivreAddScreen} />
       <Stack.Screen name="Possessions" component={PossessionListScreen} />
     </Stack.Navigator>
   );

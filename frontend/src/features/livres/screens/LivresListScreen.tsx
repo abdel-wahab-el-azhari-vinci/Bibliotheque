@@ -20,6 +20,7 @@ import type { Livre } from '../types';
 type RootStackParamList = {
   LivresList: undefined;
   LivreDetail: { id: number };
+  LivreAdd: undefined;
 };
 
 type Props = NativeStackScreenProps<RootStackParamList, 'LivresList'>;
@@ -182,9 +183,14 @@ export default function LivresListScreen({ navigation }: Props) {
           <Ionicons name="library" size={28} color={colors.white} />
           <Text style={styles.headerTitle}>Bibliothèque</Text>
         </View>
-        <TouchableOpacity onPress={handleLogout}>
-          <Ionicons name="log-out-outline" size={24} color={colors.white} />
-        </TouchableOpacity>
+        <View style={styles.headerRight}>
+          <TouchableOpacity onPress={() => navigation.navigate('LivreAdd')}>
+            <Ionicons name="add-circle" size={24} color={colors.white} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleLogout} style={{ marginLeft: spacing.md }}>
+            <Ionicons name="log-out-outline" size={24} color={colors.white} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* User card */}
@@ -285,6 +291,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
   },
   headerTitle: {
     fontSize: fontSizes['2xl'],

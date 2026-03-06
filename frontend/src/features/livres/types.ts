@@ -20,3 +20,23 @@ export interface LivreRequest {
   resume?: string;
   datePublication?: string;
 }
+
+export interface Auteur {
+  id: number;
+  nom: string;
+  prenom?: string;
+  biographie?: string;
+  dateNaissance?: string;
+}
+
+export interface Genre {
+  id: number;
+  libelle: string;
+  description?: string;
+}
+
+export interface Langue {
+  id: number;
+  libelle: string;
+  code?: string;
+}
