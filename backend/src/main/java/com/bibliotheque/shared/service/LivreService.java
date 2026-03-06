@@ -84,54 +84,27 @@ public class LivreService {
         List<Livre> resultats = getAllLivres();
         
         if (titre != null && !titre.isBlank()) {
-            List<Livre> parTitre = findByTitreContainingIgnoreCase(titre);
+            List<Livre> parTitre = searchByTitre(titre);
             resultats = resultats.stream()
                 .filter(parTitre::contains)
                 .collect(Collectors.toList());
         }
         
-        if (auteurId != null) {
-            List<Livre> parAuteur = findByGenreId(auteurId);
-            resultats = resultats.stream()
-                .filter(parAuteur::contains)
-                .collect(Collectors.toList());
-        }
-        
         if (genreId != null) {
-            List<Livre> parGenre = findByGenreId(genreId);
+            List<Livre> parGenre = searchByGenre(genreId);
             resultats = resultats.stream()
                 .filter(parGenre::contains)
                 .collect(Collectors.toList());
         }
         
         if (langueId != null) {
-            List<Livre> parLangue = findByLangueId(langueId);
+            List<Livre> parLangue = searchByLangue(langueId);
             resultats = resultats.stream()
                 .filter(parLangue::contains)
                 .collect(Collectors.toList());
         }
         
         return resultats;
-    }
-    
-    private List<Livre> findByTitreContainingIgnoreCase(String titre) {
-        return livreRepository.findByTitreContainingIgnoreCase(titre);
-    }
-    
-    private List<Livre> findByAuteurId(Long auteurId) {
-        Auteur auteur = auteurRepository.findById(auteurId)
-            .orElseThrow(() -> new NoSuchElementException("Auteur non trouvé"));
-        return getAllLivres().stream()
-            .filter(l -> l.getAuteur().getId().equals(auteur.getId()))
-            .collect(Collectors.toList());
-    }
-    
-    private List<Livre> findByGenreId(Long genreId) {
-        return livreRepository.findByGenreId(genreId);
-    }
-    
-    private List<Livre> findByLangueId(Long langueId) {
-        return livreRepository.findByLangueId(langueId);
     }
     
     /**

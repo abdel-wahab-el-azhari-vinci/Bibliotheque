@@ -1,6 +1,5 @@
 package com.bibliotheque.book.mapper;
 
-import com.bibliotheque.book.dto.LivreRequest;
 import com.bibliotheque.book.dto.LivreResponse;
 import com.bibliotheque.shared.entity.Livre;
 import org.springframework.stereotype.Component;
