@@ -1,55 +1,36 @@
 package com.bibliotheque.auth.dto;
 
-import jakarta.validation.constraints.*;
-import lombok.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
- * DTO reçu du frontend pour effectuer une inscription.
- * 
- * Responsabilité :
- * - Valider les données entrantes avec annotations Jakarta
- * - Servir de contrat entre frontend et backend
- * 
- * IMPORTANT : VALIDATION faite au niveau du Controller avec @Valid
+ * DTO RegisterRequest - Input pour inscription
  */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class RegisterRequest {
-
-    /**
-     * Email unique de l'utilisateur
-     * Vérification :
-     * - Format email valide
-     * - Unicité en BD (contrôlée par AuthService)
-     */
-    @NotBlank(message = "L'email est requis")
-    @Email(message = "L'email doit être au format valide")
-    private String email;
-
-    /**
-     * Mot de passe en clair (HTTPS obligatoire)
-     * Sera hashé avec BCrypt avant stockage en BD
-     * - Min 6 caractères (frontend + backend)
-     */
-    @NotBlank(message = "Le mot de passe est requis")
-    @Size(min = 6, message = "Le mot de passe doit avoir au moins 6 caractères")
-    private String password;
-
-    /**
-     * Nom de famille de l'utilisateur
-     * - Requis et entre 2 et 100 caractères
-     */
-    @NotBlank(message = "Le nom est requis")
-    @Size(min = 2, max = 100, message = "Le nom doit avoir entre 2 et 100 caractères")
+    
+    @NotBlank(message = "Le nom est obligatoire")
     private String nom;
-
-    /**
-     * Prénom de l'utilisateur
-     * - Requis et entre 2 et 100 caractères
-     */
-    @NotBlank(message = "Le prénom est requis")
-    @Size(min = 2, max = 100, message = "Le prénom doit avoir entre 2 et 100 caractères")
+    
+    @NotBlank(message = "Le prénom est obligatoire")
     private String prenom;
+    
+    @NotBlank(message = "L'email est obligatoire")
+    @Email(message = "L'email doit être valide")
+    private String email;
+    
+    @NotBlank(message = "Le mot de passe est obligatoire")
+    @Size(min = 8, message = "Le mot de passe doit avoir au moins 8 caractères")
+    private String password;
+    
+    @NotBlank(message = "La confirmation du mot de passe est obligatoire")
+    private String passwordConfirm;
 }

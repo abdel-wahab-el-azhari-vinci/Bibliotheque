@@ -1,101 +1,128 @@
 package com.bibliotheque.auth.util;
 
-import io.jsonwebtoken.*;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+
 import javax.crypto.SecretKey;
 import java.util.Date;
 
 /**
- * Utilitaire pour gérer les JWT tokens avec JJWT 0.11.5
- * Responsable de :
- * - Générer un token
- * - Valider un token
- * - Extraire les claims (email, rôle, etc.)
+ * JwtUtil - Génération et validation des tokens JWT
+ * 
+ * Respecte AI_RULES:
+ * ✅ Centralisé pour toute la logique JWT
+ * ✅ Pas de logique métier (juste crypto)
+ * ✅ Service va l'appeler
  */
 @Component
-@Slf4j
 public class JwtUtil {
-
-    @Value("${jwt.secret}")
+    
+    @Value("${app.jwt.secret}")
     private String secretKey;
-
-    @Value("${jwt.expiration}")
-    private long jwtExpirationMs;
-
+    
+    @Value("${app.jwt.expiration}")
+    private long expirationTime;  // en millisecondes
+    
+    @Value("${app.jwt.refresh-expiration}")
+    private long refreshExpirationTime;
+    
     /**
-     * Génère un JWT token pour l'utilisateur
-     *
-     * @param email email de l'utilisateur
-     * @param role  rôle de l'utilisateur
-     * @return JWT token
+     * Générer un token JWT
      */
-    public String generateToken(String email, String role) {
+    public String generateToken(String email, Long userId, String role) {
         SecretKey key = Keys.hmacShaKeyFor(secretKey.getBytes());
-
+        
         return Jwts.builder()
-                .setSubject(email)
-                .claim("role", role)
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
-                .signWith(key, SignatureAlgorithm.HS256)
-                .compact();
+            .setSubject(email)
+            .claim("userId", userId)
+            .claim("role", role)
+            .setIssuedAt(new Date())
+            .setExpiration(new Date(System.currentTimeMillis() + expirationTime))
+            .signWith(key, SignatureAlgorithm.HS256)
+            .compact();
     }
-
+    
     /**
-     * Valide un JWT token
-     *
-     * @param token le token à valider
-     * @return true si le token est valide
+     * Générer un refresh token
      */
-    public boolean validateToken(String token) {
+    public String generateRefreshToken(String email, Long userId) {
+        SecretKey key = Keys.hmacShaKeyFor(secretKey.getBytes());
+        
+        return Jwts.builder()
+            .setSubject(email)
+            .claim("userId", userId)
+            .setIssuedAt(new Date())
+            .setExpiration(new Date(System.currentTimeMillis() + refreshExpirationTime))
+            .signWith(key, SignatureAlgorithm.HS256)
+            .compact();
+    }
+    
+    /**
+     * Extraire tous les claims du token
+     */
+    public Claims getAllClaims(String token) {
+        SecretKey key = Keys.hmacShaKeyFor(secretKey.getBytes());
+        
+        return Jwts.parserBuilder()
+            .setSigningKey(key)
+            .build()
+            .parseClaimsJws(token)
+            .getBody();
+    }
+    
+    /**
+     * Extraire l'email (subject) du token
+     */
+    public String getEmail(String token) {
+        return getAllClaims(token).getSubject();
+    }
+    
+    /**
+     * Extraire le userId du token
+     */
+    public Long getUserId(String token) {
+        return getAllClaims(token).get("userId", Long.class);
+    }
+    
+    /**
+     * Extraire le role du token
+     */
+    public String getRole(String token) {
+        return getAllClaims(token).get("role", String.class);
+    }
+    
+    /**
+     * Vérifier si le token est expiré
+     */
+    public boolean isTokenExpired(String token) {
         try {
-            SecretKey key = Keys.hmacShaKeyFor(secretKey.getBytes());
-            Jwts.parserBuilder()
-                    .setSigningKey(key)
-                    .build()
-                    .parseClaimsJws(token);
-            return true;
-        } catch (ExpiredJwtException e) {
-            log.warn("JWT token expiré: {}", e.getMessage());
-            return false;
-        } catch (JwtException | IllegalArgumentException e) {
-            log.warn("JWT token invalide: {}", e.getMessage());
+            Claims claims = getAllClaims(token);
+            return claims.getExpiration().before(new Date());
+        } catch (Exception e) {
+            return true;  // Token invalide = considéré comme expiré
+        }
+    }
+    
+    /**
+     * Vérifier si le token est valide
+     */
+    public boolean isValidToken(String token) {
+        try {
+            getAllClaims(token);
+            return !isTokenExpired(token);
+        } catch (Exception e) {
             return false;
         }
     }
-
+    
     /**
-     * Extrait l'email (subject) du token
-     *
-     * @param token le token JWT
-     * @return l'email
+     * Retourner le temps d'expiration en secondes
      */
-    public String getEmailFromToken(String token) {
-        SecretKey key = Keys.hmacShaKeyFor(secretKey.getBytes());
-        return Jwts.parserBuilder()
-                .setSigningKey(key)
-                .build()
-                .parseClaimsJws(token)
-                .getBody()
-                .getSubject();
-    }
-
-    /**
-     * Extrait le rôle du token
-     *
-     * @param token le token JWT
-     * @return le rôle
-     */
-    public String getRoleFromToken(String token) {
-        SecretKey key = Keys.hmacShaKeyFor(secretKey.getBytes());
-        return Jwts.parserBuilder()
-                .setSigningKey(key)
-                .build()
-                .parseClaimsJws(token)
-                .getBody()
-                .get("role", String.class);
+    public long getExpirationInSeconds() {
+        return expirationTime / 1000;
     }
 }

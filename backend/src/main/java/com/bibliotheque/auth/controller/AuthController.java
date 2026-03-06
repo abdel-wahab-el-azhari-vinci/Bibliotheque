@@ -3,106 +3,86 @@ package com.bibliotheque.auth.controller;
 import com.bibliotheque.auth.dto.LoginRequest;
 import com.bibliotheque.auth.dto.LoginResponse;
 import com.bibliotheque.auth.dto.RegisterRequest;
-import com.bibliotheque.auth.dto.RegisterResponse;
 import com.bibliotheque.auth.service.AuthService;
 import jakarta.validation.Valid;
-import lombok.extern.slf4j.Slf4j;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * Controller pour gérer l'authentification (Login & Register)
- * Route : /api/auth/
- *
- * Responsabilités :
- * - Recevoir les requêtes HTTP (Request)
- * - Valider les DTOs avec @Valid + GlobalExceptionHandler
- * - Appeler le Service pour la logique métier
- * - Retourner les réponses HTTP (Response)
- *
- * RÈGLE STRICTE : AUCUNE logique métier ici !
- * RÈGLE STRICTE : Controllers ne font que du HTTP
+ * REST Controller - Authentification
+ * 
+ * Règles AI_RULES strictes:
+ * ✅ Gère UNiquement HTTP (pas de logique)
+ * ✅ Appelle TOUJOURS le Service
+ * ✅ Valide avec @Valid
+ * ✅ Jamais d'Entity en retour
  */
 @RestController
 @RequestMapping("/api/auth")
-@Slf4j
+@RequiredArgsConstructor
 public class AuthController {
-
+    
     private final AuthService authService;
-
-    public AuthController(AuthService authService) {
-        this.authService = authService;
-    }
-
+    
     /**
-     * Endpoint de LOGIN
-     *
-     * HTTP : POST /api/auth/login
-     * 
-     * @param loginRequest validé via @Valid
-     *        - email : requis, format email valide
-     *        - password : requis, min 6 caractères
-     *
-     * @return 200 OK avec LoginResponse (id, email, nom, prenom, role, token, status)
-     *         400 Bad Request si validation échoue (via GlobalExceptionHandler)
-     *         401 Unauthorized si credentials invalides (via GlobalExceptionHandler)
-     *
-     * @throws IllegalArgumentException transformée en 401 par GlobalExceptionHandler
+     * POST /api/auth/login
+     * Authentifier un utilisateur
      */
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
-        log.info("��� Requête de LOGIN reçue pour: {}", loginRequest.getEmail());
-
-        try {
-            LoginResponse response = authService.login(loginRequest);
-            log.info("✅ Login réussi pour: {}", loginRequest.getEmail());
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            log.warn("❌ Erreur de login: {}", e.getMessage());
-            // Note : L'exception est relancée et traitée par GlobalExceptionHandler
-            throw e;
-        }
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
+        LoginResponse response = authService.login(request);
+        return ResponseEntity.ok(response);
     }
-
+    
     /**
-     * Endpoint de REGISTER (Inscription)
-     *
-     * HTTP : POST /api/auth/register
-     *
-     * @param registerRequest validé via @Valid
-     *        - email : requis, format email valide, unique
-     *        - password : requis, min 6 caractères
-     *        - nom : requis, 2-100 caractères
-     *        - prenom : requis, 2-100 caractères
-     *
-     * @return 201 Created avec RegisterResponse (id, email, nom, prenom, role, token, status, message)
-     *         400 Bad Request si validation échoue (via GlobalExceptionHandler)
-     *         409 Conflict si email déjà utilisé (via GlobalExceptionHandler)
-     *
-     * Comportement :
-     * - Crée un nouvel utilisateur avec rôle "USER" et statut "ACTIF"
-     * - Hash le mot de passe avec BCrypt (jamais stocké en clair)
-     * - Génère un JWT token (login automatique)
-     * - Retourne le token + infos pour que le frontend reste authentifié
-     *
-     * @throws IllegalArgumentException transformée en 400/409 par GlobalExceptionHandler
+     * POST /api/auth/register
+     * Inscrire un nouvel utilisateur
      */
     @PostMapping("/register")
-    public ResponseEntity<RegisterResponse> register(@Valid @RequestBody RegisterRequest registerRequest) {
-        log.info("��� Requête de REGISTER reçue pour: {}", registerRequest.getEmail());
-
-        try {
-            RegisterResponse response = authService.register(registerRequest);
-            log.info("Register réussi - Nouvel utilisateur: {} (ID: {})", 
-                    registerRequest.getEmail(), response.getId());
-            
-            // 201 Created : l'utilisateur a été créé avec succès
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
-        } catch (IllegalArgumentException e) {
-            log.warn(" Erreur de register: {}", e.getMessage());
-            // Note : L'exception est relancée et traitée par GlobalExceptionHandler
-            throw e;
-        }
+    public ResponseEntity<LoginResponse> register(@Valid @RequestBody RegisterRequest request) {
+        LoginResponse response = authService.register(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
+    
+    /**
+     * POST /api/auth/refresh
+     * Rafraîchir le access token
+     */
+    @PostMapping("/refresh")
+    public ResponseEntity<LoginResponse> refresh(@RequestBody RefreshTokenRequest request) {
+        LoginResponse response = authService.refreshToken(request.getRefreshToken());
+        return ResponseEntity.ok(response);
+    }
+    
+    /**
+     * GET /api/auth/me
+     * Récupérer les infos de l'utilisateur courant
+     */
+    @GetMapping("/me")
+    public ResponseEntity<String> getCurrentUser() {
+        return ResponseEntity.ok("{ \"message\": \"Utilisateur authentifié\" }");
+    }
+    
+    /**
+     * POST /api/auth/logout
+     */
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout() {
+        return ResponseEntity.noContent().build();
+    }
+}
+
+/**
+ * DTO pour refresh token request
+ */
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+class RefreshTokenRequest {
+    private String refreshToken;
 }
