@@ -183,14 +183,9 @@ export default function LivresListScreen({ navigation }: Props) {
           <Ionicons name="library" size={28} color={colors.white} />
           <Text style={styles.headerTitle}>Bibliothèque</Text>
         </View>
-        <View style={styles.headerRight}>
-          <TouchableOpacity onPress={() => navigation.navigate('LivreAdd')}>
-            <Ionicons name="add-circle" size={24} color={colors.white} />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={handleLogout} style={{ marginLeft: spacing.md }}>
-            <Ionicons name="log-out-outline" size={24} color={colors.white} />
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity onPress={handleLogout}>
+          <Ionicons name="log-out-outline" size={24} color={colors.white} />
+        </TouchableOpacity>
       </View>
 
       {/* User card */}
@@ -269,6 +264,17 @@ export default function LivresListScreen({ navigation }: Props) {
           showsVerticalScrollIndicator={false}
         />
       )}
+
+      {/* Floating Action Button - FAB */}
+      <TouchableOpacity
+        style={[styles.fab, commonStyles.shadowLarge]}
+        onPress={() => navigation.navigate('LivreAdd')}
+        activeOpacity={0.8}
+      >
+        <View style={styles.fabContent}>
+          <Ionicons name="add" size={32} color={colors.white} />
+        </View>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -291,11 +297,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
   },
   headerTitle: {
     fontSize: fontSizes['2xl'],
@@ -503,5 +504,21 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.base,
     color: colors.gray,
     marginTop: spacing.lg,
+  },
+  // Floating Action Button (FAB)
+  fab: {
+    position: 'absolute',
+    bottom: spacing.xl,
+    right: spacing.xl,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fabContent: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
