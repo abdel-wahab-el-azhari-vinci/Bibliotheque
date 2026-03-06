@@ -4,6 +4,10 @@ import com.bibliotheque.auth.dto.LoginRequest;
 import com.bibliotheque.auth.dto.LoginResponse;
 import com.bibliotheque.auth.dto.RegisterRequest;
 import com.bibliotheque.auth.util.JwtUtil;
+import com.bibliotheque.user.entity.Role;
+import com.bibliotheque.user.entity.Status;
+import com.bibliotheque.user.repository.RoleRepository;
+import com.bibliotheque.user.repository.StatusRepository;
 import com.bibliotheque.user.entity.User;
 import com.bibliotheque.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +33,8 @@ import java.util.NoSuchElementException;
 public class AuthService {
     
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
+    private final StatusRepository statusRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     
@@ -76,6 +82,7 @@ public class AuthService {
     /**
      * Register - Inscription d'un nouvel utilisateur
      * Validation, création de compte avec password hashé
+     * Assigne rôle USER et status ACTIVE par défaut
      */
     public LoginResponse register(RegisterRequest request) {
         
@@ -92,6 +99,14 @@ public class AuthService {
         // Hash le password avec bcrypt
         String hashedPassword = passwordEncoder.encode(request.getPassword());
         
+        // Récupérer le rôle par défaut (USER)
+        Role userRole = roleRepository.findByName("USER")
+            .orElseThrow(() -> new NoSuchElementException("Rôle USER non trouvé en base"));
+        
+        // Récupérer le statut par défaut (ACTIVE)
+        Status activeStatus = statusRepository.findByName("ACTIVE")
+            .orElseThrow(() -> new NoSuchElementException("Statut ACTIVE non trouvé en base"));
+        
         // Créer l'utilisateur
         User user = new User();
         user.setNom(request.getNom());
@@ -100,16 +115,14 @@ public class AuthService {
         user.setPassword(hashedPassword);
         user.setDateInscription(LocalDateTime.now());
         user.setDateConnexion(LocalDateTime.now());
-        
-        // Default: role USER, status ACTIVE (peut être changé par admin)
-        // TODO: à récupérer avec les IDs depuis la DB
-        // Pour maintenant, c'est assumé via les fixtures
+        user.setRole(userRole);        // ✅ RÔLE ASSIGNÉ
+        user.setStatus(activeStatus);  // ✅ STATUT ASSIGNÉ
         
         // Sauvegarder
         User saved = userRepository.save(user);
         
         // Générer les tokens
-        String token = jwtUtil.generateToken(saved.getEmail(), saved.getId(), "USER");
+        String token = jwtUtil.generateToken(saved.getEmail(), saved.getId(), userRole.getName());
         String refreshToken = jwtUtil.generateRefreshToken(saved.getEmail(), saved.getId());
         
         return LoginResponse.builder()
@@ -119,7 +132,7 @@ public class AuthService {
             .email(saved.getEmail())
             .nom(saved.getNom())
             .prenom(saved.getPrenom())
-            .role("USER")
+            .role(userRole.getName())
             .expiresIn(jwtUtil.getExpirationInSeconds())
             .build();
     }

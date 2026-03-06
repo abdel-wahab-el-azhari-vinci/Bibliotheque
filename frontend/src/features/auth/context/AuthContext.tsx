@@ -39,18 +39,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     try {
       const response = await authApi.login({ email, password });
+      console.log('í³± LOGIN RESPONSE:', response);
       await httpClientManager.saveTokens({
         accessToken: response.token,
         refreshToken: response.refreshToken,
         expiresIn: response.expiresIn,
       });
-      setUser({
+      const userData: User = {
         id: response.userId,
         email: response.email,
-        nom: response.nom,
-        prenom: response.prenom,
+        nom: response.nom || '',
+        prenom: response.prenom || '',
         role: response.role,
-      });
+      };
+      console.log('í³± SETTING USER:', userData);
+      setUser(userData);
       setIsAuthenticated(true);
     } catch (error) {
       setIsAuthenticated(false);
@@ -67,18 +70,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         password,
         passwordConfirm: password,
       });
+      console.log('í³± REGISTER RESPONSE:', response);
       await httpClientManager.saveTokens({
         accessToken: response.token,
         refreshToken: response.refreshToken,
         expiresIn: response.expiresIn,
       });
-      setUser({
+      const userData: User = {
         id: response.userId,
         email: response.email,
-        nom: response.nom,
-        prenom: response.prenom,
+        nom: response.nom || '',
+        prenom: response.prenom || '',
         role: response.role,
-      });
+      };
+      console.log('í³± SETTING USER:', userData);
+      setUser(userData);
       setIsAuthenticated(true);
     } catch (error) {
       setIsAuthenticated(false);
@@ -103,13 +109,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, isLoading, login, register, logout, checkAuth }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        isAuthenticated,
+        isLoading,
+        login,
+        register,
+        logout,
+        checkAuth,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 }
 
-export function useAuth() {
+export function useAuth(): AuthContextType {
   const context = useContext(AuthContext);
   if (context === undefined) {
     throw new Error('useAuth must be used within AuthProvider');

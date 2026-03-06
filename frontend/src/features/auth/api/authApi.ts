@@ -12,12 +12,14 @@ export const authApi = {
   /** POST /auth/login - Se connecter */
   login: async (data: LoginRequest): Promise<LoginResponse> => {
     const response = await httpClient.post<LoginResponse>('/auth/login', data);
+    console.log('í³± RAW RESPONSE from backend:', response.data);
     return response.data;
   },
 
   /** POST /auth/register - S'inscrire */
   register: async (data: RegisterRequest): Promise<LoginResponse> => {
     const response = await httpClient.post<LoginResponse>('/auth/register', data);
+    console.log('í³± RAW RESPONSE from backend:', response.data);
     return response.data;
   },
 

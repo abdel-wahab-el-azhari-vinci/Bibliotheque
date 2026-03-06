@@ -1,8 +1,9 @@
 import axios, { AxiosError, AxiosInstance } from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
+import CONFIG from '../config/env';
 
 /** Configuration */
-const API_URL = 'http://localhost:8082/api';
+const API_URL = CONFIG.API_URL;
 
 /** Types pour token storage */
 interface TokenData {
@@ -81,9 +82,9 @@ class HttpClientManager {
   /** ✅ Stocker les tokens après login/register */
   async saveTokens(data: TokenData): Promise<void> {
     try {
-      await AsyncStorage.setItem('accessToken', data.accessToken);
-      await AsyncStorage.setItem('refreshToken', data.refreshToken);
-      await AsyncStorage.setItem('tokenExpiration', String(Date.now() + data.expiresIn * 1000));
+      await SecureStore.setItemAsync('accessToken', data.accessToken);
+      await SecureStore.setItemAsync('refreshToken', data.refreshToken);
+      await SecureStore.setItemAsync('tokenExpiration', String(Date.now() + data.expiresIn * 1000));
     } catch (error) {
       console.error('Erreur sauvegarde tokens:', error);
     }
@@ -92,7 +93,7 @@ class HttpClientManager {
   /** ✅ Récupérer le token d'accès */
   async getAccessToken(): Promise<string | null> {
     try {
-      return await AsyncStorage.getItem('accessToken');
+      return await SecureStore.getItemAsync('accessToken');
     } catch (error) {
       console.error('Erreur lecture accessToken:', error);
       return null;
@@ -102,7 +103,7 @@ class HttpClientManager {
   /** ✅ Récupérer le token de rafraîchissement */
   async getRefreshToken(): Promise<string | null> {
     try {
-      return await AsyncStorage.getItem('refreshToken');
+      return await SecureStore.getItemAsync('refreshToken');
     } catch (error) {
       console.error('Erreur lecture refreshToken:', error);
       return null;
@@ -138,9 +139,9 @@ class HttpClientManager {
   /** ✅ Nettoyage des tokens (logout) */
   async clearTokens(): Promise<void> {
     try {
-      await AsyncStorage.removeItem('accessToken');
-      await AsyncStorage.removeItem('refreshToken');
-      await AsyncStorage.removeItem('tokenExpiration');
+      await SecureStore.deleteItemAsync('accessToken');
+      await SecureStore.deleteItemAsync('refreshToken');
+      await SecureStore.deleteItemAsync('tokenExpiration');
     } catch (error) {
       console.error('Erreur suppression tokens:', error);
     }

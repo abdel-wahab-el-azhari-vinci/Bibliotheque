@@ -3,7 +3,10 @@ package com.bibliotheque.auth.controller;
 import com.bibliotheque.auth.dto.LoginRequest;
 import com.bibliotheque.auth.dto.LoginResponse;
 import com.bibliotheque.auth.dto.RegisterRequest;
+import com.bibliotheque.auth.dto.UserResponse;
 import com.bibliotheque.auth.service.AuthService;
+import com.bibliotheque.user.entity.User;
+import com.bibliotheque.user.repository.UserRepository;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -11,16 +14,13 @@ import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import java.util.NoSuchElementException;
 
 /**
  * REST Controller - Authentification
- * 
- * Règles AI_RULES strictes:
- * ✅ Gère UNiquement HTTP (pas de logique)
- * ✅ Appelle TOUJOURS le Service
- * ✅ Valide avec @Valid
- * ✅ Jamais d'Entity en retour
  */
 @RestController
 @RequestMapping("/api/auth")
@@ -28,10 +28,10 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
     
     private final AuthService authService;
+    private final UserRepository userRepository;
     
     /**
      * POST /api/auth/login
-     * Authentifier un utilisateur
      */
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
@@ -41,7 +41,6 @@ public class AuthController {
     
     /**
      * POST /api/auth/register
-     * Inscrire un nouvel utilisateur
      */
     @PostMapping("/register")
     public ResponseEntity<LoginResponse> register(@Valid @RequestBody RegisterRequest request) {
@@ -51,7 +50,6 @@ public class AuthController {
     
     /**
      * POST /api/auth/refresh
-     * Rafraîchir le access token
      */
     @PostMapping("/refresh")
     public ResponseEntity<LoginResponse> refresh(@RequestBody RefreshTokenRequest request) {
@@ -61,28 +59,32 @@ public class AuthController {
     
     /**
      * GET /api/auth/me
-     * Récupérer les infos de l'utilisateur courant
+     * Retour l'utilisateur connecté avec nom/prénom/rôle
      */
     @GetMapping("/me")
-    public ResponseEntity<String> getCurrentUser() {
-        return ResponseEntity.ok("{ \"message\": \"Utilisateur authentifié\" }");
+    public ResponseEntity<UserResponse> getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+        
+        User user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new NoSuchElementException("Utilisateur non trouvé"));
+        
+        UserResponse response = UserResponse.builder()
+            .id(user.getId())
+            .email(user.getEmail())
+            .nom(user.getNom())
+            .prenom(user.getPrenom())
+            .role(user.getRole().getName())
+            .build();
+        
+        return ResponseEntity.ok(response);
     }
     
-    /**
-     * POST /api/auth/logout
-     */
-    @PostMapping("/logout")
-    public ResponseEntity<Void> logout() {
-        return ResponseEntity.noContent().build();
+    
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class RefreshTokenRequest {
+        private String refreshToken;
     }
-}
-
-/**
- * DTO pour refresh token request
- */
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-class RefreshTokenRequest {
-    private String refreshToken;
 }

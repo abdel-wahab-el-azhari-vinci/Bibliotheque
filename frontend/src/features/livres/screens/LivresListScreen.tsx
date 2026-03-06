@@ -93,14 +93,12 @@ export default function LivresListScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* User info */}
-      {user && (
-        <View style={styles.userInfo}>
-          <Text style={styles.userText}>
-            {user.prenom} {user.nom} ({user.role})
-          </Text>
-        </View>
-      )}
+      {/* User info - DEBUG */}
+      <View style={styles.userInfo}>
+        <Text style={styles.userText}>
+          {user ? `${user.prenom} ${user.nom}` : 'Pas de user'}
+        </Text>
+      </View>
 
       {/* Search bar */}
       <View style={styles.searchContainer}>
