@@ -1,5 +1,6 @@
 package com.bibliotheque.shared.entity;
 import com.bibliotheque.user.entity.User;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -45,6 +46,7 @@ public class Possession {
      * Détermine si le livre est actuellement en stock
      * @return true si dateRetour est NULL
      */
+    @JsonIgnore
     public boolean isEnStock() {
         return dateRetour == null;
     }
