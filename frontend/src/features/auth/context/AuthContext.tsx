@@ -1,14 +1,14 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import httpClientManager from '../../../shared/api/httpClient';
 import { authApi } from '../api/authApi';
-import type { User } from '../types';
+import type { User, RegisterRequest } from '../types';
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (nom: string, prenom: string, email: string, password: string) => Promise<void>;
+  register: (request: RegisterRequest) => Promise<void>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
 }
@@ -61,15 +61,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const register = async (nom: string, prenom: string, email: string, password: string) => {
+  const register = async (request: RegisterRequest) => {
     try {
-      const response = await authApi.register({
-        nom,
-        prenom,
-        email,
-        password,
-        passwordConfirm: password,
-      });
+      const response = await authApi.register(request);
       console.log('í³± REGISTER RESPONSE:', response);
       await httpClientManager.saveTokens({
         accessToken: response.token,
@@ -98,9 +92,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.warn('Logout API failed (ignored):', error);
     } finally {
-      await httpClientManager.clearTokens();
       setUser(null);
       setIsAuthenticated(false);
+      await httpClientManager.clearTokens();
     }
   };
 
@@ -109,26 +103,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        isAuthenticated,
-        isLoading,
-        login,
-        register,
-        logout,
-        checkAuth,
-      }}
-    >
+    <AuthContext.Provider value={{ user, isAuthenticated, isLoading, login, register, logout, checkAuth }}>
       {children}
     </AuthContext.Provider>
   );
 }
 
-export function useAuth(): AuthContextType {
+export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within AuthProvider');
+    throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 }
