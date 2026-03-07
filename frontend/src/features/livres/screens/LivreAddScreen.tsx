@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,8 @@ import {
   FlatList,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { BarCodeScanner } from 'expo-barcode-scanner';
+import * as Permissions from 'expo-permissions';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { livresApi, auteursApi, genresApi, languesApi } from '../api/livresApi';
 import { colors, spacing, fontSizes, fontWeights, commonStyles } from '../../../theme';
@@ -48,10 +50,26 @@ export default function LivreAddScreen({ navigation }: Props) {
   const [openAuteurModal, setOpenAuteurModal] = useState(false);
   const [openGenreModal, setOpenGenreModal] = useState(false);
   const [openLangueModal, setOpenLangueModal] = useState(false);
+  const [openScanner, setOpenScanner] = useState(false);
+  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
+  const [scanning, setScanning] = useState(true);
+
+  const scannerRef = useRef<any>(null);
 
   useEffect(() => {
     loadData();
+    requestCameraPermission();
   }, []);
+
+  const requestCameraPermission = async () => {
+    try {
+      const { status } = await BarCodeScanner.requestPermissionsAsync();
+      setHasCameraPermission(status === 'granted');
+    } catch (error) {
+      console.error('Camera permission error:', error);
+      setHasCameraPermission(false);
+    }
+  };
 
   const loadData = async () => {
     try {
@@ -70,6 +88,42 @@ export default function LivreAddScreen({ navigation }: Props) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleBarCodeScanned = ({ type, data }: { type: string; data: string }) => {
+    setScanning(false);
+    
+    // Extract ISBN from barcode
+    let isbn = data;
+    
+    // If it's an EAN/UPC barcode, it's already the ISBN
+    // Remove hyphens or spaces if present
+    isbn = isbn.replace(/[-\s]/g, '');
+    
+    console.log('Scanned barcode type:', type);
+    console.log('Extracted ISBN:', isbn);
+    
+    // Update form with ISBN
+    setFormData({ ...formData, isbn });
+    
+    // Close scanner
+    setOpenScanner(false);
+    
+    Alert.alert('Succès', `ISBN détecté: ${isbn}`, [
+      {
+        text: 'OK',
+        onPress: () => setScanning(true),
+      },
+    ]);
+  };
+
+  const handleOpenScanner = () => {
+    if (hasCameraPermission === false) {
+      Alert.alert('Permission refusée', 'La permission d\'accès à la caméra est requise pour scanner les codes-barres');
+      return;
+    }
+    setScanning(true);
+    setOpenScanner(true);
   };
 
   const handleSubmit = async () => {
@@ -210,9 +264,12 @@ export default function LivreAddScreen({ navigation }: Props) {
               value={formData.isbn || ''}
               onChangeText={(text) => setFormData({ ...formData, isbn: text })}
             />
-            <TouchableOpacity style={styles.scanButton}>
+            <TouchableOpacity 
+              style={styles.scanButton}
+              onPress={handleOpenScanner}
+            >
               <Ionicons name="camera" size={20} color={colors.white} />
-              <Text style={styles.scanButtonText}>Scanner ISBN</Text>
+              <Text style={styles.scanButtonText}>Scanner</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -399,6 +456,56 @@ export default function LivreAddScreen({ navigation }: Props) {
           </View>
         </View>
       </Modal>
+
+      {/* Barcode Scanner Modal */}
+      <Modal
+        visible={openScanner}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setOpenScanner(false)}
+      >
+        <View style={styles.scannerContainer}>
+          <View style={styles.scannerHeader}>
+            <TouchableOpacity onPress={() => setOpenScanner(false)}>
+              <Ionicons name="close" size={28} color={colors.white} />
+            </TouchableOpacity>
+            <Text style={styles.scannerTitle}>Scanner ISBN</Text>
+            <View style={{ width: 28 }} />
+          </View>
+
+          {hasCameraPermission ? (
+            <>
+              <BarCodeScanner
+                ref={scannerRef}
+                onBarCodeScanned={scanning ? handleBarCodeScanned : undefined}
+                style={styles.scanner}
+                barCodeTypes={['ean13', 'ean8', 'upca', 'code128', 'code39']}
+              />
+              <View style={styles.scannerOverlay}>
+                <View style={styles.scannerFrame} />
+              </View>
+              <View style={styles.scannerFooter}>
+                <Text style={styles.scannerText}>
+                  Pointez le code-barres vers la caméra
+                </Text>
+              </View>
+            </>
+          ) : (
+            <View style={styles.permissionError}>
+              <Ionicons name="alert-circle" size={48} color={colors.danger} />
+              <Text style={styles.permissionErrorText}>
+                Permission d'accès à la caméra refusée
+              </Text>
+              <TouchableOpacity
+                style={styles.permissionButton}
+                onPress={requestCameraPermission}
+              >
+                <Text style={styles.permissionButtonText}>Accorder la permission</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -410,109 +517,22 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: colors.primary,
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.md,
     paddingTop: spacing.lg,
     paddingBottom: spacing.md,
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
   headerTitle: {
-    fontSize: fontSizes['2xl'],
-    fontWeight: fontWeights.bold,
+    fontSize: fontSizes.lg,
+    fontWeight: fontWeights.semibold,
     color: colors.white,
   },
   content: {
     flex: 1,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
-  },
-  section: {
-    marginBottom: spacing.xl,
-  },
-  sectionTitle: {
-    fontSize: fontSizes.base,
-    fontWeight: fontWeights.semibold,
-    color: colors.dark,
-    marginBottom: spacing.md,
-  },
-  textInput: {
-    backgroundColor: colors.white,
-    borderRadius: 8,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    fontSize: fontSizes.base,
-    color: colors.dark,
-    borderWidth: 1,
-    borderColor: colors.border,
-    ...commonStyles.shadow,
-  },
-  textArea: {
-    height: 100,
-    textAlignVertical: 'top',
-  },
-  isbnInputContainer: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    alignItems: 'center',
-  },
-  scanButton: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: spacing.xs,
-    ...commonStyles.shadow,
-  },
-  scanButtonText: {
-    color: colors.white,
-    fontSize: fontSizes.xs,
-    fontWeight: fontWeights.semibold,
-  },
-  dropdownInput: {
-    backgroundColor: colors.white,
-    borderRadius: 8,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
-    gap: spacing.md,
-    ...commonStyles.shadow,
-  },
-  dropdownIcon: {
-    marginRight: spacing.sm,
-  },
-  dropdownText: {
-    flex: 1,
-    fontSize: fontSizes.base,
-    color: colors.dark,
-  },
-  dropdownPlaceholder: {
-    color: colors.gray,
-  },
-  submitButton: {
-    backgroundColor: colors.primary,
-    paddingVertical: spacing.lg,
-    borderRadius: 8,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: spacing.md,
-    marginBottom: spacing.xxl,
-    ...commonStyles.shadow,
-  },
-  submitButtonDisabled: {
-    opacity: 0.6,
-  },
-  submitButtonText: {
-    color: colors.white,
-    fontSize: fontSizes.lg,
-    fontWeight: fontWeights.bold,
+    paddingTop: spacing.md,
   },
   centerContent: {
     flex: 1,
@@ -520,9 +540,93 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    fontSize: fontSizes.base,
+    fontSize: fontSizes.md,
     color: colors.gray,
     marginTop: spacing.md,
+  },
+  section: {
+    marginBottom: spacing.lg,
+  },
+  sectionTitle: {
+    fontSize: fontSizes.sm,
+    fontWeight: fontWeights.semibold,
+    color: colors.primary,
+    marginBottom: spacing.xs,
+    textTransform: 'uppercase',
+  },
+  textInput: {
+    borderWidth: 1,
+    borderColor: colors.lightGray,
+    borderRadius: 8,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    fontSize: fontSizes.md,
+    color: colors.text,
+    backgroundColor: colors.white,
+  },
+  textArea: {
+    minHeight: 120,
+    textAlignVertical: 'top',
+  },
+  isbnInputContainer: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    alignItems: 'center',
+  },
+  scanButton: {
+    backgroundColor: colors.primary,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  scanButtonText: {
+    color: colors.white,
+    fontSize: fontSizes.sm,
+    fontWeight: fontWeights.semibold,
+  },
+  dropdownInput: {
+    borderWidth: 1,
+    borderColor: colors.lightGray,
+    borderRadius: 8,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.white,
+  },
+  dropdownIcon: {
+    marginRight: spacing.xs,
+  },
+  dropdownText: {
+    fontSize: fontSizes.md,
+    color: colors.text,
+    flex: 1,
+  },
+  dropdownPlaceholder: {
+    color: colors.gray,
+  },
+  submitButton: {
+    backgroundColor: colors.primary,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    borderRadius: 8,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: spacing.md,
+    marginBottom: spacing.xl,
+  },
+  submitButtonDisabled: {
+    opacity: 0.6,
+  },
+  submitButtonText: {
+    color: colors.white,
+    fontSize: fontSizes.md,
+    fontWeight: fontWeights.semibold,
   },
   modalOverlay: {
     flex: 1,
@@ -531,37 +635,108 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: colors.white,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
     maxHeight: '80%',
-    paddingBottom: spacing.lg,
   },
   modalHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: spacing.lg,
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: colors.lightGray,
   },
   modalTitle: {
     fontSize: fontSizes.lg,
-    fontWeight: fontWeights.bold,
-    color: colors.dark,
+    fontWeight: fontWeights.semibold,
+    color: colors.text,
   },
   modalItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.lightGray,
   },
   modalItemText: {
-    fontSize: fontSizes.base,
-    color: colors.dark,
+    fontSize: fontSizes.md,
+    color: colors.text,
+  },
+  scannerContainer: {
     flex: 1,
+    backgroundColor: colors.dark,
+  },
+  scannerHeader: {
+    backgroundColor: colors.dark,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  scannerTitle: {
+    fontSize: fontSizes.lg,
+    fontWeight: fontWeights.semibold,
+    color: colors.white,
+  },
+  scanner: {
+    flex: 1,
+  },
+  scannerOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    pointerEvents: 'none',
+  },
+  scannerFrame: {
+    width: 300,
+    height: 200,
+    borderWidth: 2,
+    borderColor: colors.primary,
+    borderRadius: 8,
+    backgroundColor: 'transparent',
+  },
+  scannerFooter: {
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.md,
+  },
+  scannerText: {
+    color: colors.white,
+    fontSize: fontSizes.md,
+    textAlign: 'center',
+  },
+  permissionError: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+  },
+  permissionErrorText: {
+    fontSize: fontSizes.md,
+    color: colors.white,
+    marginTop: spacing.md,
+    textAlign: 'center',
+  },
+  permissionButton: {
+    backgroundColor: colors.primary,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: 8,
+    marginTop: spacing.lg,
+  },
+  permissionButtonText: {
+    color: colors.white,
+    fontSize: fontSizes.md,
+    fontWeight: fontWeights.semibold,
   },
 });
