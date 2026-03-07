@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Repository pour Possession - TABLE PIVOT CRITIQUE
@@ -62,4 +63,5 @@ public interface PossessionRepository extends JpaRepository<Possession, Long> {
     @Query("SELECT COUNT(p) FROM Possession p " +
            "WHERE p.livre.id = :livreId AND p.dateRetour IS NULL")
     int countEnStock(@Param("livreId") Long livreId);
+    Optional<Possession> findByLivreIdAndUserIdEnStock(@Param("livreId") Long livreId, @Param("userId") Long userId);
 }

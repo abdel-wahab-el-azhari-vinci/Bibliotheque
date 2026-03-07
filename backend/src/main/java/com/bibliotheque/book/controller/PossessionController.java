@@ -6,8 +6,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import com.bibliotheque.user.entity.User;
+import com.bibliotheque.user.repository.UserRepository;
 
 import java.time.LocalDate;
+import java.util.NoSuchElementException;
 import java.util.List;
 
 /**
@@ -22,6 +27,7 @@ import java.util.List;
 public class PossessionController {
     
     private final PossessionService possessionService;
+    private final UserRepository userRepository;
     
     /**
      * GET /api/possessions/en-stock
@@ -98,5 +104,12 @@ public class PossessionController {
     public ResponseEntity<Possession> markAsReturned(@PathVariable Long id) {
         Possession possession = possessionService.markAsReturned(id);
         return ResponseEntity.ok(possession);
+    }
+    @PostMapping("/borrow")
+    public ResponseEntity<Possession> borrow(@RequestParam Long livreId) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        User user = userRepository.findByEmail(auth.getName())
+            .orElseThrow(() -> new NoSuchElementException("User not found"));
+        return ResponseEntity.ok(possessionService.borrowBook(livreId, user.getId()));
     }
 }

@@ -122,4 +122,9 @@ public class PossessionService {
     public boolean isLivreEnStock(Long livreId) {
         return possessionRepository.isLivreEnStock(livreId);
     }
+    public Possession borrowBook(Long livreId, Long userId) {
+        Possession possession = possessionRepository.findByLivreIdAndUserIdEnStock(livreId, userId)
+            .orElseThrow(() -> new NoSuchElementException("Aucun exemplaire disponible"));
+        return markAsOut(possession.getId(), LocalDate.now());
+    }
 }
