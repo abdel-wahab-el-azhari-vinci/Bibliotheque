@@ -12,8 +12,7 @@ import {
   FlatList,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { BarCodeScanner } from 'expo-barcode-scanner';
-import * as Permissions from 'expo-permissions';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { livresApi, auteursApi, genresApi, languesApi } from '../api/livresApi';
 import { colors, spacing, fontSizes, fontWeights, commonStyles } from '../../../theme';
@@ -51,25 +50,14 @@ export default function LivreAddScreen({ navigation }: Props) {
   const [openGenreModal, setOpenGenreModal] = useState(false);
   const [openLangueModal, setOpenLangueModal] = useState(false);
   const [openScanner, setOpenScanner] = useState(false);
-  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const [scanning, setScanning] = useState(true);
 
-  const scannerRef = useRef<any>(null);
+  const cameraRef = useRef<CameraView>(null);
+  const [permission, requestPermission] = useCameraPermissions();
 
   useEffect(() => {
     loadData();
-    requestCameraPermission();
   }, []);
-
-  const requestCameraPermission = async () => {
-    try {
-      const { status } = await BarCodeScanner.requestPermissionsAsync();
-      setHasCameraPermission(status === 'granted');
-    } catch (error) {
-      console.error('Camera permission error:', error);
-      setHasCameraPermission(false);
-    }
-  };
 
   const loadData = async () => {
     try {
@@ -90,25 +78,27 @@ export default function LivreAddScreen({ navigation }: Props) {
     }
   };
 
-  const handleBarCodeScanned = ({ type, data }: { type: string; data: string }) => {
+  const handleBarCodeScanned = (code: any) => {
+    if (!code || !scanning) return;
+
     setScanning(false);
-    
-    // Extract ISBN from barcode
-    let isbn = data;
-    
-    // If it's an EAN/UPC barcode, it's already the ISBN
-    // Remove hyphens or spaces if present
+
+    // Extract ISBN from barcode (expo-camera Vision API uses 'data')
+    let isbn = code.data || code.displayValue || code.value || "";
+
+    // Remove hyphens or spaces
     isbn = isbn.replace(/[-\s]/g, '');
-    
-    console.log('Scanned barcode type:', type);
+
+    console.log('Full barcode object:', code);
+    console.log('Scanned barcode type:', code.type);
     console.log('Extracted ISBN:', isbn);
-    
+
     // Update form with ISBN
     setFormData({ ...formData, isbn });
-    
+
     // Close scanner
     setOpenScanner(false);
-    
+
     Alert.alert('Succès', `ISBN détecté: ${isbn}`, [
       {
         text: 'OK',
@@ -117,11 +107,20 @@ export default function LivreAddScreen({ navigation }: Props) {
     ]);
   };
 
-  const handleOpenScanner = () => {
-    if (hasCameraPermission === false) {
-      Alert.alert('Permission refusée', 'La permission d\'accès à la caméra est requise pour scanner les codes-barres');
+  const handleOpenScanner = async () => {
+    if (!permission) {
+      Alert.alert('Erreur', 'Permission de caméra non disponible');
       return;
     }
+
+    if (!permission.granted) {
+      const result = await requestPermission();
+      if (!result.granted) {
+        Alert.alert('Permission refusée', 'La permission d\'accès à la caméra est requise');
+        return;
+      }
+    }
+
     setScanning(true);
     setOpenScanner(true);
   };
@@ -473,14 +472,14 @@ export default function LivreAddScreen({ navigation }: Props) {
             <View style={{ width: 28 }} />
           </View>
 
-          {hasCameraPermission ? (
+          {permission?.granted ? (
             <>
-              <BarCodeScanner
-                ref={scannerRef}
-                onBarCodeScanned={scanning ? handleBarCodeScanned : undefined}
+              <CameraView
+                ref={cameraRef}
                 style={styles.scanner}
-                barCodeTypes={['ean13', 'ean8', 'upca', 'code128', 'code39']}
-              />
+                facing="back"
+                onBarcodeScanned={scanning ? handleBarCodeScanned : undefined}
+                />
               <View style={styles.scannerOverlay}>
                 <View style={styles.scannerFrame} />
               </View>
@@ -498,7 +497,7 @@ export default function LivreAddScreen({ navigation }: Props) {
               </Text>
               <TouchableOpacity
                 style={styles.permissionButton}
-                onPress={requestCameraPermission}
+                onPress={requestPermission}
               >
                 <Text style={styles.permissionButtonText}>Accorder la permission</Text>
               </TouchableOpacity>
@@ -563,6 +562,7 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.md,
     color: colors.text,
     backgroundColor: colors.white,
+    flex: 1,
   },
   textArea: {
     minHeight: 120,
