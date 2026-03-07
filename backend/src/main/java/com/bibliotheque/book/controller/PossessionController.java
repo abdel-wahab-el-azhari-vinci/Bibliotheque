@@ -2,6 +2,7 @@ package com.bibliotheque.book.controller;
 
 import com.bibliotheque.shared.service.PossessionService;
 import com.bibliotheque.shared.entity.Possession;
+import com.bibliotheque.book.dto.BorrowRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -105,11 +106,17 @@ public class PossessionController {
         Possession possession = possessionService.markAsReturned(id);
         return ResponseEntity.ok(possession);
     }
+    
+    /**
+     * POST /api/possessions/borrow
+     * Emprunter un livre (utilisateur authentifié)
+     * Body: { "livreId": 1 }
+     */
     @PostMapping("/borrow")
-    public ResponseEntity<Possession> borrow(@RequestParam Long livreId) {
+    public ResponseEntity<Possession> borrow(@RequestBody BorrowRequest request) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         User user = userRepository.findByEmail(auth.getName())
             .orElseThrow(() -> new NoSuchElementException("User not found"));
-        return ResponseEntity.ok(possessionService.borrowBook(livreId, user.getId()));
+        return ResponseEntity.ok(possessionService.borrowBook(request.getLivreId(), user.getId()));
     }
 }

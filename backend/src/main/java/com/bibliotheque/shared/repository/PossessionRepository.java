@@ -63,5 +63,10 @@ public interface PossessionRepository extends JpaRepository<Possession, Long> {
     @Query("SELECT COUNT(p) FROM Possession p " +
            "WHERE p.livre.id = :livreId AND p.dateRetour IS NULL")
     int countEnStock(@Param("livreId") Long livreId);
+    
+    /**
+     * Possession d'un utilisateur pour un livre spécifique EN STOCK
+     */
+    @Query("SELECT p FROM Possession p WHERE p.livre.id = :livreId AND p.user.id = :userId AND p.dateRetour IS NULL")
     Optional<Possession> findByLivreIdAndUserIdEnStock(@Param("livreId") Long livreId, @Param("userId") Long userId);
 }
