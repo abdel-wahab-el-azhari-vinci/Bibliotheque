@@ -1,3 +1,4 @@
+import { getPublicationYear } from '../utils/dateUtils';
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -37,6 +38,7 @@ export default function LivreDetailScreen({ route, navigation }: Props) {
     try {
       setLoading(true);
       const data = await livresApi.getById(id);
+      console.log('Livre loaded:', data);
       setLivre(data);
     } catch (error) {
       Alert.alert('Erreur', 'Impossible de charger les détails du livre');
@@ -45,6 +47,7 @@ export default function LivreDetailScreen({ route, navigation }: Props) {
       setLoading(false);
     }
   };
+
 
   const handleBorrow = async () => {
     if (!livre) return;
@@ -57,14 +60,12 @@ export default function LivreDetailScreen({ route, navigation }: Props) {
           try {
             setBorrowing(true);
             await possessionApi.borrow(livre.id);
+            // Navigation directe vers la liste des emprunts
             Alert.alert('Succès', 'Livre emprunté avec succès!', [
               {
                 text: 'Voir mes emprunts',
                 onPress: () => navigation.navigate('Possessions'),
-              },
-              {
-                text: 'Retour à la liste',
-                onPress: () => navigation.navigate('LivresList'),
+                isPreferred: true,
               },
             ]);
           } catch (error: any) {
@@ -99,122 +100,133 @@ export default function LivreDetailScreen({ route, navigation }: Props) {
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* Header with back button */}
       <View style={[styles.header, commonStyles.shadowLarge]}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color={colors.white} />
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Ionicons name="chevron-back" size={28} color={colors.white} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Détails du livre</Text>
-        <View style={{ width: 24 }} />
+        <View style={styles.spacer} />
       </View>
 
-      {/* Book Cover Section */}
-      <View style={styles.coverSection}>
-        <View style={styles.bookCoverPlaceholder}>
-          <Ionicons name="book" size={80} color={colors.primary} />
-        </View>
-        <Text style={styles.titre}>{livre.titre}</Text>
-      </View>
-
-      {/* Details Card */}
-      <View style={[styles.detailsCard, commonStyles.shadow]}>
-        {/* Author */}
-        <View style={styles.detailRow}>
-          <View style={styles.detailLabel}>
-            <Ionicons name="person" size={20} color={colors.primary} />
-            <Text style={styles.label}>Auteur</Text>
-          </View>
-          <Text style={styles.value}>{livre.auteurNom}</Text>
-        </View>
-
-        {/* Genre */}
-        <View style={[styles.detailRow, styles.borderTop]}>
-          <View style={styles.detailLabel}>
-            <Ionicons name="pricetag" size={20} color={colors.primary} />
-            <Text style={styles.label}>Genre</Text>
-          </View>
-          <Text style={styles.value}>{livre.genreLibelle}</Text>
-        </View>
-
-        {/* Language */}
-        <View style={[styles.detailRow, styles.borderTop]}>
-          <View style={styles.detailLabel}>
-            <Ionicons name="globe" size={20} color={colors.primary} />
-            <Text style={styles.label}>Langue</Text>
-          </View>
-          <Text style={styles.value}>{livre.langueLibelle || 'N/A'}</Text>
-        </View>
-
-        {/* ISBN */}
-        <View style={[styles.detailRow, styles.borderTop]}>
-          <View style={styles.detailLabel}>
-            <Ionicons name="barcode" size={20} color={colors.primary} />
-            <Text style={styles.label}>ISBN</Text>
-          </View>
-          <Text style={styles.value}>{livre.isbn || 'N/A'}</Text>
-        </View>
-
-        {/* Publication Date */}
-        <View style={[styles.detailRow, styles.borderTop]}>
-          <View style={styles.detailLabel}>
-            <Ionicons name="calendar" size={20} color={colors.primary} />
-            <Text style={styles.label}>Publication</Text>
-          </View>
-          <Text style={styles.value}>{livre.datePublication || 'N/A'}</Text>
+      {/* Book Cover Placeholder */}
+      <View style={styles.bookCoverContainer}>
+        <View style={styles.bookCover}>
+          <Ionicons name="book" size={80} color={colors.white} />
         </View>
       </View>
 
-      {/* Resume Section (Description) */}
-      {livre.resume && (
-        <View style={styles.descriptionSection}>
-          <Text style={styles.sectionTitle}>Résumé</Text>
-          <Text style={styles.descriptionText}>{livre.resume}</Text>
+      {/* Stock Status Banner */}
+      {livre && (
+        <View style={styles.statusBanner}>
+          <View
+            style={[
+              styles.statusBannerContent,
+              livre.statusStock === 'EN_STOCK' ? styles.statusBannerAvailable : styles.statusBannerUnavailable,
+            ]}
+          >
+            <Ionicons
+              name={livre.statusStock === 'EN_STOCK' ? 'checkmark-circle' : 'alert-circle'}
+              size={20}
+              color={livre.statusStock === 'EN_STOCK' ? colors.success : colors.danger}
+            />
+            <Text
+              style={[
+                styles.statusBannerText,
+                livre.statusStock === 'EN_STOCK' ? styles.statusBannerTextAvailable : styles.statusBannerTextUnavailable,
+              ]}
+            >
+              {livre.statusStock === 'EN_STOCK' ? 'En stock' : 'Non disponible'}
+            </Text>
+          </View>
         </View>
       )}
 
-      {/* Stock Status */}
-      <View style={styles.statusSection}>
-        {livre.statusStock === 'EN_STOCK' ? (
-          <View style={[styles.statusBanner, styles.statusBannerReady]}>
-            <Ionicons name="checkmark-circle" size={24} color={colors.success} />
-            <View style={styles.statusContent}>
-              <Text style={styles.statusTitle}>Disponible</Text>
-              <Text style={styles.statusSubtitle}>
-                {livre.nbExemplairesDisponibles} exemplaire(s) disponible(s)
-              </Text>
+      {/* Book Details */}
+      <View style={styles.detailsContainer}>
+        <Text style={styles.titre}>{livre?.titre}</Text>
+
+        <View style={styles.metadataContainer}>
+          {/* Author */}
+          <View style={styles.metadataItem}>
+            <View style={styles.metadataLabel}>
+              <Ionicons name="person" size={16} color={colors.primary} />
+              <Text style={styles.metadataLabelText}>Auteur</Text>
             </View>
+            <Text style={styles.metadataValue}>{livre?.auteurNom}</Text>
           </View>
-        ) : (
-          <View style={[styles.statusBanner, styles.statusBannerUnavailable]}>
-            <Ionicons name="close-circle" size={24} color={colors.danger} />
-            <View style={styles.statusContent}>
-              <Text style={styles.statusTitle}>Non disponible</Text>
-              <Text style={styles.statusSubtitle}>Tous les exemplaires sont empruntés</Text>
+
+          {/* Genre */}
+          <View style={styles.metadataItem}>
+            <View style={styles.metadataLabel}>
+              <Ionicons name="pricetag" size={16} color={colors.primary} />
+              <Text style={styles.metadataLabelText}>Genre</Text>
             </View>
+            <Text style={styles.metadataValue}>{livre?.genreLibelle}</Text>
+          </View>
+
+          {/* Language */}
+          <View style={styles.metadataItem}>
+            <View style={styles.metadataLabel}>
+              <Ionicons name="globe" size={16} color={colors.primary} />
+              <Text style={styles.metadataLabelText}>Langue</Text>
+            </View>
+            <Text style={styles.metadataValue}>{livre?.langueLibelle}</Text>
+          </View>
+
+          {/* ISBN */}
+          <View style={styles.metadataItem}>
+            <View style={styles.metadataLabel}>
+              <Ionicons name="barcode" size={16} color={colors.primary} />
+              <Text style={styles.metadataLabelText}>ISBN</Text>
+            </View>
+            <Text style={styles.metadataValue}>{livre?.isbn}</Text>
+          </View>
+
+          {/* Publication Year */}
+          <View style={styles.metadataItem}>
+            <View style={styles.metadataLabel}>
+              <Ionicons name="calendar" size={16} color={colors.primary} />
+              <Text style={styles.metadataLabelText}>Année</Text>
+            </View>
+            <Text style={styles.metadataValue}>{getPublicationYear(livre?.datePublication)}</Text>
+          </View>
+        </View>
+
+        {/* Resume Section */}
+        {livre?.resume && (
+          <View style={styles.resumeSection}>
+            <Text style={styles.resumeLabel}>Résumé</Text>
+            <Text style={styles.resumeText}>{livre.resume}</Text>
           </View>
         )}
-      </View>
 
-      {/* Borrow Button */}
-      <View style={styles.actionSection}>
+        {/* Borrow Button */}
         <TouchableOpacity
           style={[
             styles.borrowButton,
-            livre.statusStock !== 'EN_STOCK' && styles.borrowButtonDisabled,
+            (borrowing || livre?.statusStock !== 'EN_STOCK') && styles.borrowButtonDisabled,
           ]}
           onPress={handleBorrow}
-          disabled={livre.statusStock !== 'EN_STOCK' || borrowing}
+          disabled={borrowing || livre?.statusStock !== 'EN_STOCK'}
+          activeOpacity={0.7}
         >
-          {borrowing ? (
-            <ActivityIndicator color={colors.white} />
-          ) : (
-            <>
-              <Ionicons name="download-outline" size={20} color={colors.white} />
-              <Text style={styles.borrowButtonText}>Emprunter ce livre</Text>
-            </>
-          )}
+          <Ionicons
+            name="download"
+            size={20}
+            color={
+              borrowing || livre?.statusStock !== 'EN_STOCK' ? colors.gray : colors.white
+            }
+          />
+          <Text
+            style={[
+              styles.borrowButtonText,
+              (borrowing || livre?.statusStock !== 'EN_STOCK') && styles.borrowButtonTextDisabled,
+            ]}
+          >
+            {borrowing ? 'Emprunt en cours...' : 'Emprunter ce livre'}
+          </Text>
+          {borrowing && <ActivityIndicator color={colors.primary} style={{ marginLeft: spacing.sm }} />}
         </TouchableOpacity>
       </View>
-
-      <View style={{ height: spacing.xxl }} />
     </ScrollView>
   );
 }
@@ -230,133 +242,125 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: colors.primary,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
     paddingTop: spacing.lg,
+    paddingBottom: spacing.md,
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
     alignItems: 'center',
   },
   headerTitle: {
     fontSize: fontSizes.lg,
-    fontWeight: fontWeights.bold,
+    fontWeight: fontWeights.semibold,
     color: colors.white,
+    flex: 1,
+    textAlign: 'center',
   },
-  coverSection: {
+  spacer: {
+    width: 40,
+  },
+  bookCoverContainer: {
+    paddingVertical: spacing.lg,
+    justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: spacing.xxl,
-    backgroundColor: colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
   },
-  bookCoverPlaceholder: {
-    width: 100,
-    height: 140,
-    backgroundColor: colors.primary + '10',
+  bookCover: {
+    width: 120,
+    height: 160,
+    backgroundColor: colors.primary,
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: spacing.lg,
     ...commonStyles.shadow,
-  },
-  titre: {
-    fontSize: fontSizes.xl,
-    fontWeight: fontWeights.bold,
-    color: colors.dark,
-    textAlign: 'center',
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.md,
-  },
-  detailsCard: {
-    backgroundColor: colors.white,
-    marginHorizontal: spacing.lg,
-    marginVertical: spacing.lg,
-    borderRadius: 8,
-    overflow: 'hidden',
-  },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  borderTop: {
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
-  detailLabel: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  label: {
-    fontSize: fontSizes.base,
-    fontWeight: fontWeights.semibold,
-    color: colors.dark,
-  },
-  value: {
-    fontSize: fontSizes.base,
-    color: colors.gray,
-    fontWeight: fontWeights.normal,
-  },
-  descriptionSection: {
-    backgroundColor: colors.white,
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.lg,
-    padding: spacing.lg,
-    borderRadius: 8,
-    ...commonStyles.shadow,
-  },
-  sectionTitle: {
-    fontSize: fontSizes.lg,
-    fontWeight: fontWeights.bold,
-    color: colors.dark,
-    marginBottom: spacing.md,
-  },
-  descriptionText: {
-    fontSize: fontSizes.base,
-    color: colors.gray,
-    lineHeight: 20,
-  },
-  statusSection: {
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.lg,
   },
   statusBanner: {
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.md,
+  },
+  statusBannerContent: {
     flexDirection: 'row',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderRadius: 8,
     alignItems: 'center',
     gap: spacing.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    borderRadius: 8,
   },
-  statusBannerReady: {
-    backgroundColor: colors.success + '15',
+  statusBannerAvailable: {
+    backgroundColor: colors.lightSuccess,
   },
   statusBannerUnavailable: {
-    backgroundColor: colors.danger + '15',
+    backgroundColor: colors.lightDanger,
   },
-  statusContent: {
-    flex: 1,
+  statusBannerText: {
+    fontSize: fontSizes.md,
+    fontWeight: fontWeights.semibold,
   },
-  statusTitle: {
-    fontSize: fontSizes.lg,
+  statusBannerTextAvailable: {
+    color: colors.success,
+  },
+  statusBannerTextUnavailable: {
+    color: colors.danger,
+  },
+  detailsContainer: {
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.xl,
+  },
+  titre: {
+    fontSize: fontSizes.xxl,
     fontWeight: fontWeights.bold,
-    color: colors.dark,
+    color: colors.text,
+    marginBottom: spacing.md,
+  },
+  metadataContainer: {
+    gap: spacing.md,
+    marginBottom: spacing.lg,
+    paddingBottom: spacing.lg,
+    borderBottomColor: colors.lightGray,
+    borderBottomWidth: 1,
+  },
+  metadataItem: {
+    gap: spacing.xs,
+  },
+  metadataLabel: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
     marginBottom: spacing.xs,
   },
-  statusSubtitle: {
+  metadataLabelText: {
     fontSize: fontSizes.sm,
-    color: colors.gray,
+    fontWeight: fontWeights.semibold,
+    color: colors.primary,
   },
-  actionSection: {
-    paddingHorizontal: spacing.lg,
+  metadataValue: {
+    fontSize: fontSizes.md,
+    color: colors.text,
+    marginLeft: spacing.lg,
+  },
+  resumeSection: {
     marginBottom: spacing.lg,
   },
+  resumeLabel: {
+    fontSize: fontSizes.lg,
+    fontWeight: fontWeights.semibold,
+    color: colors.text,
+    marginBottom: spacing.md,
+  },
+  resumeText: {
+    fontSize: fontSizes.md,
+    color: colors.gray,
+    lineHeight: 24,
+  },
   borrowButton: {
-    backgroundColor: colors.secondary,
-    paddingVertical: spacing.lg,
+    backgroundColor: colors.primary,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
     borderRadius: 8,
     flexDirection: 'row',
     justifyContent: 'center',
@@ -369,11 +373,14 @@ const styles = StyleSheet.create({
   },
   borrowButtonText: {
     color: colors.white,
-    fontSize: fontSizes.lg,
-    fontWeight: fontWeights.bold,
+    fontSize: fontSizes.md,
+    fontWeight: fontWeights.semibold,
+  },
+  borrowButtonTextDisabled: {
+    color: colors.gray,
   },
   errorText: {
-    fontSize: fontSizes.base,
+    fontSize: fontSizes.lg,
     color: colors.danger,
     marginTop: spacing.md,
   },

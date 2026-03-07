@@ -4,6 +4,7 @@ import com.bibliotheque.shared.service.PossessionService;
 import com.bibliotheque.shared.entity.Possession;
 import com.bibliotheque.book.dto.BorrowRequest;
 import com.bibliotheque.book.dto.PossessionResponse;
+import com.bibliotheque.book.dto.BorrowingResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -70,6 +71,26 @@ public class PossessionController {
         String status = possessionService.getStatus(livreId);
         return ResponseEntity.ok(status);
     }
+
+    /**
+     * GET /api/possessions/me
+     * Récupérer les emprunts de l'utilisateur authentifié avec infos complètes
+     * Response: List<BorrowingResponse> avec titre, auteur, dates, statut
+     */
+    @GetMapping("/me")
+    public ResponseEntity<List<BorrowingResponse>> getMyBorrowings() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        User user = userRepository.findByEmail(auth.getName())
+            .orElseThrow(() -> new NoSuchElementException("User not found"));
+        
+        List<Possession> borrowings = possessionService.getUserBorrowings(user.getId());
+        
+        List<BorrowingResponse> response = borrowings.stream()
+            .map(this::toBorrowingResponse)
+            .toList();
+        
+        return ResponseEntity.ok(response);
+    }
     
     /**
      * POST /api/possessions/ajouter-stock
@@ -101,37 +122,53 @@ public class PossessionController {
     /**
      * PATCH /api/possessions/{id}/retourner
      * Marquer un livre comme retourné
+     * Response: BorrowingResponse pour éviter les erreurs de sérialisation Hibernate
      */
     @PatchMapping("/{id}/retourner")
-    public ResponseEntity<Possession> markAsReturned(@PathVariable Long id) {
+    public ResponseEntity<BorrowingResponse> markAsReturned(@PathVariable Long id) {
         Possession possession = possessionService.markAsReturned(id);
-        return ResponseEntity.ok(possession);
+        return ResponseEntity.ok(toBorrowingResponse(possession));
     }
     
     /**
      * POST /api/possessions/borrow
      * Emprunter un livre (utilisateur authentifié)
      * Body: { "livreId": 1 }
-     * Response: PossessionResponse avec les détails du livre emprunté
+     * Response: BorrowingResponse avec tous les détails
      */
     @PostMapping("/borrow")
-    public ResponseEntity<PossessionResponse> borrow(@RequestBody BorrowRequest request) {
+    public ResponseEntity<BorrowingResponse> borrow(@RequestBody BorrowRequest request) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         User user = userRepository.findByEmail(auth.getName())
             .orElseThrow(() -> new NoSuchElementException("User not found"));
         
         Possession possession = possessionService.borrowBook(request.getLivreId(), user.getId());
         
-        // Map to DTO to avoid Hibernate serialization issues
-        PossessionResponse response = new PossessionResponse(
+        return ResponseEntity.ok(toBorrowingResponse(possession));
+    }
+    
+    /**
+     * Convertir une Possession en BorrowingResponse enrichie
+     */
+    private BorrowingResponse toBorrowingResponse(Possession possession) {
+        LocalDate dateRetour = possession.getDateRetour();
+        String statut = (dateRetour == null) ? "EN_COURS" : "RETOURNE";
+        LocalDate dateRetourPrevu = possession.getDateEmprunt().plusDays(14);
+        LocalDate dateRetourEffectif = dateRetour;
+        
+        return new BorrowingResponse(
             possession.getId(),
+            statut,
             possession.getDateEmprunt(),
-            possession.getDateRetour(),
+            dateRetourPrevu,
+            dateRetourEffectif,
             possession.getLivre().getId(),
             possession.getLivre().getTitre(),
+            possession.getLivre().getAuteur().getNom(),
+            possession.getLivre().getGenre().getLibelle(),
+            possession.getLivre().getIsbn(),
+            possession.getLivre().getDatePublication() != null ? possession.getLivre().getDatePublication().getYear() : null,
             possession.getUser().getId()
         );
-        
-        return ResponseEntity.ok(response);
     }
 }

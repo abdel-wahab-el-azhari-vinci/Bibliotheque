@@ -50,7 +50,7 @@ public class PossessionService {
     }
     
     /**
-     * Marquer un livre comme sorti/emprunté
+     * Marquer un livre comme sorti/emprunté (dateRetour != NULL)
      */
     public Possession markAsOut(Long possessionId, LocalDate dateRetour) {
         Possession possession = possessionRepository.findById(possessionId)
@@ -61,17 +61,14 @@ public class PossessionService {
     }
     
     /**
-     * Marquer un livre comme retourné
+     * Marquer un livre comme retourné (dateRetour = NULL)
+     * Remet le livre en stock en mettant dateRetour à NULL
      */
     public Possession markAsReturned(Long possessionId) {
         Possession possession = possessionRepository.findById(possessionId)
             .orElseThrow(() -> new NoSuchElementException("Possession non trouvée"));
         
-        if (possession.getDateRetour() != null) {
-            throw new IllegalStateException("Ce livre est déjà marqué comme retourné");
-        }
-        
-        possession.setDateRetour(LocalDate.now());
+        possession.setDateRetour(null); // Livre retourné = back to stock
         return possessionRepository.save(possession);
     }
     
@@ -100,31 +97,50 @@ public class PossessionService {
      * Récupérer le statut d'un livre
      */
     public String getStatus(Long livreId) {
-        if (possessionRepository.isLivreEnStock(livreId)) {
-            return "EN_STOCK";
-        } else if (possessionRepository.findByLivreId(livreId).isEmpty()) {
+        List<Possession> possessions = possessionRepository.findByLivreId(livreId);
+        
+        if (possessions.isEmpty()) {
             return "AUCUN_EXEMPLAIRE";
-        } else {
-            return "SORTI";
         }
+        
+        for (Possession p : possessions) {
+            if (p.getDateRetour() == null) {
+                return "EN_STOCK";
+            }
+        }
+        
+        return "SORTI";
     }
     
     /**
-     * Compter les exemplaires disponibles
+     * Compter les exemplaires disponibles d'un livre
      */
-    public Integer countAvailable(Long livreId) {
-        return possessionRepository.countEnStock(livreId);
+    public int countAvailable(Long livreId) {
+        return (int) getAllEnStock().stream()
+            .filter(p -> p.getLivre().getId().equals(livreId))
+            .count();
+    }
+    
+    /**
+     * Emprunter un livre (utilisateur authentifié)
+     */
+    public Possession borrowBook(Long livreId, Long userId) {
+        Possession possession = possessionRepository.findByLivreIdAndUserIdEnStock(livreId, userId)
+            .orElseThrow(() -> new NoSuchElementException("Aucun exemplaire disponible"));
+        return markAsOut(possession.getId(), LocalDate.now());
+    }
+
+    /**
+     * Récupérer les emprunts actuels d'un utilisateur (livres SORTIS)
+     */
+    public List<Possession> getUserBorrowings(Long userId) {
+        return possessionRepository.findByUserIdSortis(userId);
     }
     
     /**
      * Vérifier si un livre est en stock
      */
     public boolean isLivreEnStock(Long livreId) {
-        return possessionRepository.isLivreEnStock(livreId);
-    }
-    public Possession borrowBook(Long livreId, Long userId) {
-        Possession possession = possessionRepository.findByLivreIdAndUserIdEnStock(livreId, userId)
-            .orElseThrow(() -> new NoSuchElementException("Aucun exemplaire disponible"));
-        return markAsOut(possession.getId(), LocalDate.now());
+        return countAvailable(livreId) > 0;
     }
 }

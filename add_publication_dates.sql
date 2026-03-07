@@ -1,0 +1,10 @@
+UPDATE livre SET date_publication = 2020-05-15 WHERE id = 1
+UPDATE livre SET date_publication = 2019-03-20 WHERE id = 2
+UPDATE livre SET date_publication = 2021-11-10 WHERE id = 3
+UPDATE livre SET date_publication = 2018-06-01 WHERE id = 4
+UPDATE livre SET date_publication = 2022-09-14 WHERE id = 5
+UPDATE livre SET date_publication = 2017-12-25 WHERE id = 6
+UPDATE livre SET date_publication = 2023-02-28 WHERE id = 7
+UPDATE livre SET date_publication = 2021-04-10 WHERE id = 8
+UPDATE livre SET date_publication = 2020-08-19 WHERE id = 9
+UPDATE livre SET date_publication = 2019-11-05 WHERE id = 10

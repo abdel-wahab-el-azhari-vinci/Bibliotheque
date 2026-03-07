@@ -22,6 +22,7 @@ type RootStackParamList = {
   LivresList: undefined;
   LivreDetail: { id: number };
   LivreAdd: undefined;
+  Possessions: undefined;
 };
 
 type Props = NativeStackScreenProps<RootStackParamList, 'LivresList'>;
@@ -103,6 +104,10 @@ export default function LivresListScreen({ navigation }: Props) {
       Animated.timing(fabScale, { toValue: 1, duration: 100, useNativeDriver: true }),
     ]).start();
     navigation.navigate('LivreAdd');
+  };
+
+  const handleViewBorrowings = () => {
+    navigation.navigate('Possessions');
   };
 
   const renderLivreItem = ({ item }: { item: Livre }) => (
@@ -194,7 +199,14 @@ export default function LivresListScreen({ navigation }: Props) {
           <Text style={styles.headerTitle}>Bibliothèque</Text>
         </View>
         <View style={styles.headerRight}>
-          <TouchableOpacity onPress={handleLogout} style={{ marginLeft: spacing.md }}>
+          <TouchableOpacity 
+            onPress={handleViewBorrowings} 
+            style={{ marginRight: spacing.md }}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="bookmark" size={24} color={colors.white} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleLogout} activeOpacity={0.7}>
             <Ionicons name="log-out-outline" size={24} color={colors.white} />
           </TouchableOpacity>
         </View>
@@ -322,17 +334,19 @@ const styles = StyleSheet.create({
   },
   userCard: {
     backgroundColor: colors.white,
-    marginHorizontal: spacing.lg,
-    marginVertical: spacing.md,
-    padding: spacing.md,
+    marginHorizontal: spacing.md,
+    marginTop: spacing.md,
     borderRadius: 8,
+    padding: spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    borderLeftWidth: 4,
-    borderLeftColor: colors.primary,
   },
   userAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: colors.lightGray,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -340,18 +354,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   userName: {
-    fontSize: fontSizes.lg,
-    fontWeight: fontWeights.bold,
-    color: colors.dark,
-    marginBottom: spacing.xs,
+    fontSize: fontSizes.md,
+    fontWeight: fontWeights.semibold,
+    color: colors.text,
   },
   userEmail: {
     fontSize: fontSizes.sm,
     color: colors.gray,
+    marginTop: spacing.xs,
   },
   userBadge: {
     backgroundColor: colors.success,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     borderRadius: 12,
     flexDirection: 'row',
@@ -360,11 +374,11 @@ const styles = StyleSheet.create({
   },
   userBadgeText: {
     fontSize: fontSizes.xs,
+    fontWeight: fontWeights.semibold,
     color: colors.white,
-    fontWeight: fontWeights.bold,
   },
   searchSection: {
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
   },
   searchContainer: {
@@ -373,9 +387,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
     borderRadius: 8,
     paddingHorizontal: spacing.md,
-    borderWidth: 2,
-    borderColor: colors.primary,
-    ...commonStyles.shadow,
+    borderColor: colors.lightGray,
+    borderWidth: 1,
   },
   searchIcon: {
     marginRight: spacing.sm,
@@ -383,43 +396,36 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     paddingVertical: spacing.md,
-    fontSize: fontSizes.base,
-    color: colors.dark,
+    fontSize: fontSizes.sm,
+    color: colors.text,
   },
   resultsInfo: {
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.md,
     paddingBottom: spacing.sm,
   },
   resultsText: {
     fontSize: fontSizes.sm,
     color: colors.gray,
-    fontWeight: fontWeights.semibold,
-  },
-  centerContent: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
+    fontWeight: fontWeights.medium,
   },
   listContent: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    paddingBottom: 100,
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.xxl,
   },
   livreCard: {
     backgroundColor: colors.white,
     borderRadius: 8,
-    padding: spacing.md,
     marginBottom: spacing.md,
+    padding: spacing.md,
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: spacing.md,
   },
   bookIconContainer: {
-    width: 50,
-    height: 50,
+    width: 60,
+    height: 80,
     backgroundColor: colors.primary,
-    borderRadius: 8,
+    borderRadius: 4,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -427,14 +433,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   titre: {
-    fontSize: fontSizes.lg,
-    fontWeight: fontWeights.bold,
-    color: colors.dark,
+    fontSize: fontSizes.md,
+    fontWeight: fontWeights.semibold,
+    color: colors.text,
     marginBottom: spacing.sm,
   },
   metadata: {
+    gap: spacing.xs,
     marginBottom: spacing.sm,
-    gap: spacing.sm,
   },
   metaItem: {
     flexDirection: 'row',
@@ -442,25 +448,25 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   metaText: {
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.xs,
     color: colors.gray,
   },
   isbnContainer: {
     flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: spacing.sm,
   },
   isbnLabel: {
     fontSize: fontSizes.xs,
-    color: colors.gray,
     fontWeight: fontWeights.semibold,
+    color: colors.gray,
   },
   isbnValue: {
     fontSize: fontSizes.xs,
-    color: colors.dark,
-    fontFamily: 'monospace',
+    color: colors.gray,
   },
   statusContainer: {
-    marginTop: spacing.sm,
+    marginBottom: spacing.xs,
   },
   status: {
     flexDirection: 'row',
@@ -472,29 +478,32 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   statusReady: {
-    backgroundColor: colors.success,
+    backgroundColor: colors.lightSuccess,
   },
   statusUnavailable: {
-    backgroundColor: colors.danger,
+    backgroundColor: colors.lightDanger,
   },
   statusText: {
     fontSize: fontSizes.xs,
-    fontWeight: fontWeights.bold,
+    fontWeight: fontWeights.semibold,
   },
   statusTextReady: {
-    color: colors.white,
+    color: colors.success,
   },
   statusTextUnavailable: {
-    color: colors.white,
+    color: colors.danger,
   },
   actionButton: {
     backgroundColor: colors.primary,
-    paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    borderRadius: 8,
+    paddingHorizontal: spacing.sm,
+    borderRadius: 6,
     justifyContent: 'center',
     alignItems: 'center',
-    ...commonStyles.shadow,
+    minHeight: 40,
+  },
+  actionButtonDisabled: {
+    backgroundColor: colors.lightGray,
   },
   actionButtonContent: {
     flexDirection: 'row',
@@ -506,33 +515,34 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.sm,
     fontWeight: fontWeights.semibold,
   },
-  actionButtonDisabled: {
-    backgroundColor: colors.lightGray,
-  },
   actionButtonTextDisabled: {
     color: colors.gray,
   },
+  centerContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   loadingText: {
-    fontSize: fontSizes.base,
+    fontSize: fontSizes.md,
     color: colors.gray,
     marginTop: spacing.md,
   },
   noData: {
-    fontSize: fontSizes.base,
+    fontSize: fontSizes.md,
     color: colors.gray,
     textAlign: 'center',
-    marginTop: spacing.md,
+    marginHorizontal: spacing.lg,
   },
-  // FAB Styles - Positioned Properly
   fabContainer: {
     position: 'absolute',
-    bottom: 24,
-    right: 24,
+    bottom: spacing.lg,
+    right: spacing.lg,
   },
   fab: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',

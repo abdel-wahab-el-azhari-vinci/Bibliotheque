@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { possessionApi, type BorrowResponse } from '../api/possessionApi';
 import { colors, spacing, fontSizes, fontWeights, commonStyles } from '../../../theme';
+import { formatDateFR, getDaysUntilReturn } from '../utils/dateUtils';
 
 type RootStackParamList = {
   Possessions: undefined;
@@ -36,6 +37,7 @@ export default function PossessionListScreen({ navigation }: Props) {
     try {
       setLoading(true);
       const data = await possessionApi.getMyBorrows();
+      console.log('Borrows loaded:', data);
       setBorrows(data);
     } catch (error) {
       Alert.alert('Erreur', 'Impossible de charger les emprunts');
@@ -97,13 +99,14 @@ export default function PossessionListScreen({ navigation }: Props) {
         {/* Book Info */}
         <View style={styles.bookInfo}>
           <View style={styles.iconContainer}>
-            <Ionicons name="book" size={24} color={colors.primary} />
+            <Ionicons name="book" size={32} color={colors.white} />
           </View>
           <View style={styles.infoContent}>
             <Text style={styles.titre} numberOfLines={2}>
               {item.titre}
             </Text>
             <Text style={styles.auteur}>{item.auteur}</Text>
+            <Text style={styles.genre}>{item.genre}</Text>
             <View style={styles.dateRow}>
               <Ionicons name="calendar" size={14} color={colors.gray} />
               <Text style={styles.dateText}>
@@ -148,78 +151,97 @@ export default function PossessionListScreen({ navigation }: Props) {
               </Text>
             </View>
           )}
+
+          {item.isbn && (
+            <View style={styles.detailItem}>
+              <Text style={styles.detailLabel}>ISBN:</Text>
+              <Text style={styles.detailValue}>{item.isbn}</Text>
+            </View>
+          )}
+
+          {item.anneePub && (
+            <View style={styles.detailItem}>
+              <Text style={styles.detailLabel}>Année:</Text>
+              <Text style={styles.detailValue}>{item.anneePub}</Text>
+            </View>
+          )}
         </View>
 
-        {/* Action Button */}
+        {/* Return Button */}
         {isActive && (
           <TouchableOpacity
-            style={[styles.returnButton, returning === item.id && styles.returning]}
+            style={[styles.returnButton, returning === item.id && styles.returnButtonDisabled]}
             onPress={() => handleReturnBook(item)}
             disabled={returning === item.id}
+            activeOpacity={0.7}
           >
-            {returning === item.id ? (
-              <ActivityIndicator color={colors.white} />
-            ) : (
-              <>
-                <Ionicons name="arrow-undo-outline" size={18} color={colors.white} />
-                <Text style={styles.returnButtonText}>Retourner</Text>
-              </>
-            )}
+            <Ionicons
+              name="checkmark-done"
+              size={18}
+              color={returning === item.id ? colors.gray : colors.white}
+            />
+            <Text style={[
+              styles.returnButtonText,
+              returning === item.id && styles.returnButtonTextDisabled
+            ]}>
+              {returning === item.id ? 'Retour...' : 'Retourner'}
+            </Text>
           </TouchableOpacity>
         )}
       </View>
     );
   };
 
-  const renderSectionHeading = ({ section: { title, data } }: any) => (
+  const renderSectionHeader = ({ section: { title } }: { section: { title: string } }) => (
     <View style={styles.sectionHeader}>
       <Ionicons
-        name={title === 'En cours' ? 'time-outline' : 'checkmark-done-outline'}
-        size={20}
+        name={title === 'En cours' ? 'hourglass' : 'archive'}
+        size={18}
         color={colors.primary}
       />
       <Text style={styles.sectionTitle}>{title}</Text>
-      <Text style={styles.sectionCount}>({data.length})</Text>
     </View>
   );
 
   const renderEmptySection = () => (
     <View style={styles.emptySection}>
       <Ionicons name="book-outline" size={48} color={colors.lightGray} />
-      <Text style={styles.emptyText}>Aucun emprunt en cours</Text>
+      <Text style={styles.emptySectionText}>Aucun emprunt</Text>
     </View>
   );
-
-  if (loading) {
-    return (
-      <View style={[styles.container, styles.centerContent]}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
-    );
-  }
 
   return (
     <View style={styles.container}>
       {/* Header */}
       <View style={[styles.header, commonStyles.shadowLarge]}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color={colors.white} />
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Ionicons name="chevron-back" size={28} color={colors.white} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Mes emprunts</Text>
-        <View style={{ width: 24 }} />
+        <View style={styles.spacer} />
       </View>
 
-      {/* Borrows List */}
-      {borrows.length === 0 ? (
-        renderEmptySection()
+      {/* Content */}
+      {loading ? (
+        <View style={styles.centerContent}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={styles.loadingText}>Chargement des emprunts...</Text>
+        </View>
+      ) : borrows.length === 0 ? (
+        <View style={styles.centerContent}>
+          <Ionicons name="book-outline" size={48} color={colors.lightGray} />
+          <Text style={styles.noData}>Aucun emprunt pour le moment</Text>
+        </View>
       ) : (
         <SectionList
           sections={sections}
-          keyExtractor={(item, index) => item.id.toString() + index}
+          keyExtractor={(item) => item.id.toString()}
           renderItem={renderBorrowItem}
-          renderSectionHeader={renderSectionHeading}
+          renderSectionHeader={renderSectionHeader}
           contentContainerStyle={styles.listContent}
+          SectionSeparatorComponent={({ trailingItem }) => (trailingItem ? <View style={{ height: spacing.md }} /> : null)}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          ListEmptyComponent={renderEmptySection}
           showsVerticalScrollIndicator={false}
         />
       )}
@@ -232,82 +254,111 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  centerContent: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   header: {
     backgroundColor: colors.primary,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
     paddingTop: spacing.lg,
+    paddingBottom: spacing.md,
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
     alignItems: 'center',
   },
   headerTitle: {
     fontSize: fontSizes.lg,
-    fontWeight: fontWeights.bold,
+    fontWeight: fontWeights.semibold,
     color: colors.white,
+    flex: 1,
+    textAlign: 'center',
+  },
+  spacer: {
+    width: 40,
+  },
+  centerContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: fontSizes.md,
+    color: colors.gray,
+    marginTop: spacing.md,
+  },
+  noData: {
+    fontSize: fontSizes.md,
+    color: colors.gray,
+    marginHorizontal: spacing.lg,
   },
   listContent: {
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
-    paddingBottom: spacing.xxl,
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.sm,
-    backgroundColor: colors.white,
-    marginVertical: spacing.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    backgroundColor: colors.lightGray,
     borderRadius: 8,
+    marginBottom: spacing.md,
   },
   sectionTitle: {
-    fontSize: fontSizes.lg,
-    fontWeight: fontWeights.bold,
-    color: colors.dark,
-    flex: 1,
-  },
-  sectionCount: {
-    fontSize: fontSizes.base,
-    color: colors.gray,
+    fontSize: fontSizes.md,
     fontWeight: fontWeights.semibold,
+    color: colors.text,
+  },
+  emptySection: {
+    alignItems: 'center',
+    paddingVertical: spacing.lg,
+  },
+  emptySectionText: {
+    fontSize: fontSizes.md,
+    color: colors.gray,
+    marginTop: spacing.md,
   },
   borrowCard: {
     backgroundColor: colors.white,
     borderRadius: 8,
-    padding: spacing.md,
     marginBottom: spacing.md,
+    padding: spacing.md,
+    gap: spacing.md,
   },
   bookInfo: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
     gap: spacing.md,
-    marginBottom: spacing.md,
   },
   iconContainer: {
-    width: 48,
-    height: 48,
-    backgroundColor: colors.primary + '10',
-    borderRadius: 8,
+    width: 60,
+    height: 80,
+    backgroundColor: colors.primary,
+    borderRadius: 4,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: spacing.xs,
   },
   infoContent: {
     flex: 1,
+    justifyContent: 'flex-start',
   },
   titre: {
-    fontSize: fontSizes.base,
-    fontWeight: fontWeights.bold,
-    color: colors.dark,
+    fontSize: fontSizes.md,
+    fontWeight: fontWeights.semibold,
+    color: colors.text,
     marginBottom: spacing.xs,
   },
   auteur: {
     fontSize: fontSizes.sm,
+    color: colors.primary,
+    fontWeight: fontWeights.medium,
+    marginBottom: spacing.xs,
+  },
+  genre: {
+    fontSize: fontSizes.xs,
     color: colors.gray,
     marginBottom: spacing.xs,
   },
@@ -321,77 +372,70 @@ const styles = StyleSheet.create({
     color: colors.gray,
   },
   statusBadge: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
   },
   statusBadgeActive: {
-    backgroundColor: colors.success + '15',
+    backgroundColor: colors.lightSuccess,
   },
   statusBadgeOverdue: {
-    backgroundColor: colors.warning + '15',
+    backgroundColor: colors.lightDanger,
   },
   statusBadgeReturned: {
     backgroundColor: colors.lightGray,
   },
   statusBadgeText: {
-    fontSize: fontSizes.base,
+    fontSize: fontSizes.lg,
     fontWeight: fontWeights.bold,
+    color: colors.text,
   },
   details: {
-    marginBottom: spacing.md,
-    paddingBottom: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    gap: spacing.sm,
+    paddingTop: spacing.sm,
+    borderTopColor: colors.lightGray,
+    borderTopWidth: 1,
   },
   detailItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.xs,
   },
   detailLabel: {
     fontSize: fontSizes.sm,
     color: colors.gray,
-    fontWeight: fontWeights.semibold,
+    fontWeight: fontWeights.medium,
   },
   detailValue: {
     fontSize: fontSizes.sm,
-    color: colors.dark,
+    color: colors.text,
+    fontWeight: fontWeights.semibold,
   },
   textOverdue: {
     color: colors.danger,
-    fontWeight: fontWeights.bold,
   },
   returnButton: {
-    backgroundColor: colors.secondary,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    borderRadius: 8,
+    backgroundColor: colors.success,
     flexDirection: 'row',
-    justifyContent: 'center',
     alignItems: 'center',
-    gap: spacing.md,
+    justifyContent: 'center',
+    gap: spacing.xs,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: 6,
+    marginTop: spacing.sm,
   },
-  returning: {
-    opacity: 0.6,
+  returnButtonDisabled: {
+    backgroundColor: colors.lightGray,
   },
   returnButtonText: {
     color: colors.white,
-    fontSize: fontSizes.base,
-    fontWeight: fontWeights.bold,
+    fontSize: fontSizes.sm,
+    fontWeight: fontWeights.semibold,
   },
-  emptySection: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-  },
-  emptyText: {
-    fontSize: fontSizes.base,
+  returnButtonTextDisabled: {
     color: colors.gray,
-    marginTop: spacing.lg,
   },
 });
