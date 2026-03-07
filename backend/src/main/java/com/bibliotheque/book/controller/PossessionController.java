@@ -3,6 +3,7 @@ package com.bibliotheque.book.controller;
 import com.bibliotheque.shared.service.PossessionService;
 import com.bibliotheque.shared.entity.Possession;
 import com.bibliotheque.book.dto.BorrowRequest;
+import com.bibliotheque.book.dto.PossessionResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -111,12 +112,26 @@ public class PossessionController {
      * POST /api/possessions/borrow
      * Emprunter un livre (utilisateur authentifié)
      * Body: { "livreId": 1 }
+     * Response: PossessionResponse avec les détails du livre emprunté
      */
     @PostMapping("/borrow")
-    public ResponseEntity<Possession> borrow(@RequestBody BorrowRequest request) {
+    public ResponseEntity<PossessionResponse> borrow(@RequestBody BorrowRequest request) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         User user = userRepository.findByEmail(auth.getName())
             .orElseThrow(() -> new NoSuchElementException("User not found"));
-        return ResponseEntity.ok(possessionService.borrowBook(request.getLivreId(), user.getId()));
+        
+        Possession possession = possessionService.borrowBook(request.getLivreId(), user.getId());
+        
+        // Map to DTO to avoid Hibernate serialization issues
+        PossessionResponse response = new PossessionResponse(
+            possession.getId(),
+            possession.getDateEmprunt(),
+            possession.getDateRetour(),
+            possession.getLivre().getId(),
+            possession.getLivre().getTitre(),
+            possession.getUser().getId()
+        );
+        
+        return ResponseEntity.ok(response);
     }
 }
