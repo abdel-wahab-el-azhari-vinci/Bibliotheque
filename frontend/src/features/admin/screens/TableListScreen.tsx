@@ -18,10 +18,6 @@ interface Props {
   onBackupClick?: () => void;
 }
 
-/**
- * √âcran listant toutes les tables de la base de donn√©es
- * Affichage en grille 2x2
- */
 const TableListScreen: React.FC<Props> = ({ 
   adminService, 
   onSelectTable,
@@ -132,43 +128,35 @@ const TableListScreen: React.FC<Props> = ({
   const renderTableItem = ({ item }: { item: string[] }) => (
     <View style={styles.rowContainer}>
       {item.map((table, index) => (
-        <View
+        <TouchableOpacity
           key={table}
           style={[
-            styles.tableCardContainer,
-            index === 1 && styles.tableCardContainerRight,
+            styles.tableCard,
+            index === 1 && styles.tableCardRight,
           ]}
+          onPress={() => onSelectTable(table)}
+          activeOpacity={0.7}
         >
+          <Text style={styles.tableIcon}>‚¨• ‚¨• ‚¨•</Text>
+          <Text style={styles.tableName}>{table}</Text>
+          
           <TouchableOpacity
-            style={styles.tableCard}
-            onPress={() => onSelectTable(table)}
-            activeOpacity={0.7}
+            style={[
+              styles.resetButton,
+              resettingTable === table && styles.resetButtonDisabled,
+            ]}
+            onPress={() => handleResetClick(table)}
+            disabled={resettingTable === table}
           >
-            <View style={styles.cardHeader}>
-              <Text style={styles.tableIcon}>‚¨• ‚¨• ‚¨•</Text>
-              <TouchableOpacity
-                style={[
-                  styles.resetButtonSmall,
-                  resettingTable === table && styles.resetButtonDisabled,
-                ]}
-                onPress={() => handleResetClick(table)}
-                disabled={resettingTable === table}
-              >
-                {resettingTable === table ? (
-                  <ActivityIndicator size="small" color="#fff" />
-                ) : (
-                  <Text style={styles.resetButtonTextSmall}>Ì∑ëÔ∏è</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-            <Text style={styles.tableName}>{table}</Text>
-            <Text style={styles.tableAction}>G√©rer</Text>
+            {resettingTable === table ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.resetButtonText}>Vider</Text>
+            )}
           </TouchableOpacity>
-        </View>
+        </TouchableOpacity>
       ))}
-      {item.length === 1 && (
-        <View style={[styles.tableCardContainer, styles.tableCardContainerRight, styles.emptyCard]} />
-      )}
+      {item.length === 1 && <View style={[styles.tableCard, styles.tableCardRight, styles.emptyCard]} />}
     </View>
   );
 
@@ -207,7 +195,7 @@ const TableListScreen: React.FC<Props> = ({
           }}
           activeOpacity={0.7}
         >
-          <Text style={styles.backupButtonText}>Ì≤æ Backup DB</Text>
+          <Text style={styles.backupButtonText}>Backup DB</Text>
         </TouchableOpacity>
       </View>
 
@@ -320,65 +308,57 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     justifyContent: 'space-between',
   },
-  tableCardContainer: {
-    flex: 1,
-    marginRight: 7,
-  },
-  tableCardContainerRight: {
-    marginRight: 0,
-    marginLeft: 7,
-  },
   tableCard: {
+    flex: 1,
     backgroundColor: '#fff',
     borderRadius: 12,
     padding: 15,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 140,
+    minHeight: 160,
+    marginRight: 7,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
-  cardHeader: {
-    flexDirection: 'row',
-    width: '100%',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
+  tableCardRight: {
+    marginRight: 0,
+    marginLeft: 7,
   },
   emptyCard: {
     opacity: 0,
   },
   tableIcon: {
     fontSize: 28,
-  },
-  resetButtonSmall: {
-    backgroundColor: '#FF3B30',
-    width: 36,
-    height: 36,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  resetButtonDisabled: {
-    opacity: 0.6,
-  },
-  resetButtonTextSmall: {
-    fontSize: 18,
+    marginBottom: 10,
   },
   tableName: {
     fontSize: 16,
     fontWeight: '600',
     color: '#333',
-    marginBottom: 8,
+    marginBottom: 12,
     textAlign: 'center',
   },
-  tableAction: {
-    fontSize: 12,
-    color: '#007AFF',
-    fontWeight: '500',
+  resetButton: {
+    backgroundColor: '#FF3B30',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    width: '100%',
+    alignItems: 'center',
+    marginTop: 'auto',
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  resetButtonDisabled: {
+    opacity: 0.6,
+  },
+  resetButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 14,
   },
   loadingText: {
     marginTop: 15,
@@ -458,22 +438,22 @@ const styles = StyleSheet.create({
   warningText: {
     fontSize: 13,
     color: '#FF9500',
+    marginBottom: 12,
     fontWeight: '600',
-    marginBottom: 10,
   },
   dependentsList: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#FFF3CD',
     borderRadius: 8,
-    padding: 12,
+    padding: 10,
     marginBottom: 12,
   },
   dependentItem: {
-    fontSize: 13,
-    color: '#666',
-    marginBottom: 6,
+    fontSize: 12,
+    color: '#333',
+    marginBottom: 4,
   },
   infoText: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#666',
     marginBottom: 16,
     fontStyle: 'italic',
@@ -483,26 +463,27 @@ const styles = StyleSheet.create({
   },
   modalButtons: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     gap: 12,
-    justifyContent: 'flex-end',
   },
   cancelButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
+    flex: 1,
+    paddingVertical: 12,
+    backgroundColor: '#e0e0e0',
     borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#007AFF',
+    alignItems: 'center',
   },
   cancelButtonText: {
-    color: '#007AFF',
+    color: '#333',
     fontWeight: '600',
     fontSize: 14,
   },
   confirmButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
+    flex: 1,
+    paddingVertical: 12,
     backgroundColor: '#FF3B30',
+    borderRadius: 8,
+    alignItems: 'center',
   },
   confirmButtonText: {
     color: '#fff',
