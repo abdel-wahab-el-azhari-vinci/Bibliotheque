@@ -16,7 +16,8 @@ export class AdminService {
     const response = await this.axios.get(
       `${CONFIG.API_URL}/admin/database/tables`
     );
-    return response.data;
+    // La réponse est { success: true, tables: [...], count: N }
+    return response.data.tables || [];
   }
 
   /**
@@ -46,6 +47,16 @@ export class AdminService {
   async getTableData(tableName: string) {
     const response = await this.axios.get(
       `${CONFIG.API_URL}/admin/database/tables/${tableName}/data`
+    );
+    return response.data;
+  }
+
+  /**
+   * Récupère les colonnes d'une table
+   */
+  async getTableColumns(tableName: string) {
+    const response = await this.axios.get(
+      `${CONFIG.API_URL}/admin/database/tables/${tableName}/columns`
     );
     return response.data;
   }

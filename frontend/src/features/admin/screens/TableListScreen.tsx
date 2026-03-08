@@ -39,6 +39,7 @@ const TableListScreen: React.FC<Props> = ({
       setLoading(true);
       setError(null);
       const data = await adminService.getTables();
+      console.log('Tables charg√©es:', data);
       setTables(data || []);
     } catch (err) {
       console.error('Erreur lors du chargement des tables:', err);
@@ -103,18 +104,33 @@ const TableListScreen: React.FC<Props> = ({
         <Text style={styles.subtitle}>S√©lectionnez une table pour la modifier</Text>
       </View>
 
-      <FlatList
-        data={groupedTables}
-        renderItem={renderTableItem}
-        keyExtractor={(_, index) => `group-${index}`}
-        scrollEnabled={false}
-        contentContainerStyle={styles.listContent}
-      />
+      {tables.length === 0 ? (
+        <ScrollView style={styles.emptyContent} contentContainerStyle={styles.emptyContainer}>
+          <Text style={styles.emptyText}>Aucune table disponible</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={loadTables}>
+            <Text style={styles.buttonText}>Recharger</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      ) : (
+        <FlatList
+          data={groupedTables}
+          renderItem={renderTableItem}
+          keyExtractor={(_, index) => `group-${index}`}
+          scrollEnabled={true}
+          contentContainerStyle={styles.listContent}
+        />
+      )}
 
       <View style={styles.footer}>
         <TouchableOpacity
           style={styles.backupButton}
-          onPress={onBackupClick}
+          onPress={() => {
+            if (onBackupClick) {
+              onBackupClick();
+            } else {
+              Alert.alert('Erreur', 'Fonction backup non disponible');
+            }
+          }}
           activeOpacity={0.7}
         >
           <Text style={styles.backupButtonText}>Ì≤æ Backup DB</Text>
@@ -152,6 +168,20 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: 15,
+  },
+  emptyContent: {
+    flex: 1,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#999',
+    marginBottom: 20,
   },
   rowContainer: {
     flexDirection: 'row',
