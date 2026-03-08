@@ -98,9 +98,9 @@ const TableListScreen: React.FC<Props> = ({
           onPress={() => onSelectTable(table)}
           activeOpacity={0.7}
         >
-          <Text style={styles.tableIcon}>���</Text>
+          <Text style={styles.tableIcon}>⬥ ⬥ ⬥</Text>
           <Text style={styles.tableName}>{table}</Text>
-          <Text style={styles.tableAction}>Gérer →</Text>
+          <Text style={styles.tableAction}>Gérer</Text>
         </TouchableOpacity>
       ))}
       {item.length === 1 && <View style={[styles.tableCard, styles.tableCardRight, styles.emptyCard]} />}
