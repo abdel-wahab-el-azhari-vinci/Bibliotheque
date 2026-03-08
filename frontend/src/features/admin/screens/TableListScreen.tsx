@@ -52,20 +52,30 @@ const TableListScreen: React.FC<Props> = ({
 
   if (loading) {
     return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
-        <Text style={styles.loadingText}>Chargement des tables...</Text>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Gestion des Tables</Text>
+        </View>
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color="#007AFF" />
+          <Text style={styles.loadingText}>Chargement des tables...</Text>
+        </View>
       </View>
     );
   }
 
   if (error) {
     return (
-      <View style={styles.centerContainer}>
-        <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={loadTables}>
-          <Text style={styles.buttonText}>Réessayer</Text>
-        </TouchableOpacity>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Gestion des Tables</Text>
+        </View>
+        <View style={styles.centerContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={loadTables}>
+            <Text style={styles.buttonText}>Réessayer</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }
@@ -101,7 +111,6 @@ const TableListScreen: React.FC<Props> = ({
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Gestion des Tables</Text>
-        <Text style={styles.subtitle}>Sélectionnez une table pour la modifier</Text>
       </View>
 
       {tables.length === 0 ? (
@@ -153,18 +162,13 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: '#007AFF',
-    padding: 20,
-    paddingTop: 30,
+    padding: 15,
+    paddingTop: 20,
   },
   title: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#fff',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#e0e0e0',
   },
   listContent: {
     padding: 15,
