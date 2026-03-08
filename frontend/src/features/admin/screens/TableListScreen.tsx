@@ -144,24 +144,25 @@ const TableListScreen: React.FC<Props> = ({
             onPress={() => onSelectTable(table)}
             activeOpacity={0.7}
           >
-            <Text style={styles.tableIcon}>‚¨• ‚¨• ‚¨•</Text>
+            <View style={styles.cardHeader}>
+              <Text style={styles.tableIcon}>‚¨• ‚¨• ‚¨•</Text>
+              <TouchableOpacity
+                style={[
+                  styles.resetButtonSmall,
+                  resettingTable === table && styles.resetButtonDisabled,
+                ]}
+                onPress={() => handleResetClick(table)}
+                disabled={resettingTable === table}
+              >
+                {resettingTable === table ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={styles.resetButtonTextSmall}>Ì∑ëÔ∏è</Text>
+                )}
+              </TouchableOpacity>
+            </View>
             <Text style={styles.tableName}>{table}</Text>
             <Text style={styles.tableAction}>G√©rer</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.resetButton,
-              resettingTable === table && styles.resetButtonDisabled,
-            ]}
-            onPress={() => handleResetClick(table)}
-            disabled={resettingTable === table}
-            activeOpacity={0.7}
-          >
-            {resettingTable === table ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <Text style={styles.resetButtonText}>Ì∑ëÔ∏è</Text>
-            )}
           </TouchableOpacity>
         </View>
       ))}
@@ -330,22 +331,42 @@ const styles = StyleSheet.create({
   tableCard: {
     backgroundColor: '#fff',
     borderRadius: 12,
-    padding: 20,
+    padding: 15,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 120,
+    minHeight: 140,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
+  cardHeader: {
+    flexDirection: 'row',
+    width: '100%',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
   emptyCard: {
     opacity: 0,
   },
   tableIcon: {
-    fontSize: 32,
-    marginBottom: 10,
+    fontSize: 28,
+  },
+  resetButtonSmall: {
+    backgroundColor: '#FF3B30',
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  resetButtonDisabled: {
+    opacity: 0.6,
+  },
+  resetButtonTextSmall: {
+    fontSize: 18,
   },
   tableName: {
     fontSize: 16,
@@ -358,21 +379,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#007AFF',
     fontWeight: '500',
-  },
-  resetButton: {
-    marginTop: 8,
-    backgroundColor: '#FF3B30',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  resetButtonDisabled: {
-    opacity: 0.6,
-  },
-  resetButtonText: {
-    fontSize: 16,
   },
   loadingText: {
     marginTop: 15,
