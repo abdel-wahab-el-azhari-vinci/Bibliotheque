@@ -96,7 +96,7 @@ const BackupScreen: React.FC<Props> = ({ backupService, onBack }) => {
   const renderBackupItem = ({ item }: { item: Backup }) => (
     <View style={styles.backupCard}>
       <View style={styles.backupInfo}>
-        <Text style={styles.backupName}>í³… {item.name}</Text>
+        <Text style={styles.backupName}> {item.name}</Text>
         <Text style={styles.backupDate}>{item.date}</Text>
         <Text style={styles.backupSize}>Taille: {item.size} KB</Text>
       </View>
@@ -150,7 +150,7 @@ const BackupScreen: React.FC<Props> = ({ backupService, onBack }) => {
           {creatingBackup ? (
             <ActivityIndicator size="small" color="#fff" />
           ) : (
-            <Text style={styles.createButtonText}>í²¾ Nouveau Backup</Text>
+            <Text style={styles.createButtonText}>Nouveau Backup</Text>
           )}
         </TouchableOpacity>
       </View>

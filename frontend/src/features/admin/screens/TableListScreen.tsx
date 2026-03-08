@@ -98,7 +98,6 @@ const TableListScreen: React.FC<Props> = ({
           onPress={() => onSelectTable(table)}
           activeOpacity={0.7}
         >
-          <Text style={styles.tableIcon}>â¬¥ â¬¥ â¬¥</Text>
           <Text style={styles.tableName}>{table}</Text>
           <Text style={styles.tableAction}>GÃ©rer</Text>
         </TouchableOpacity>
@@ -142,7 +141,7 @@ const TableListScreen: React.FC<Props> = ({
           }}
           activeOpacity={0.7}
         >
-          <Text style={styles.backupButtonText}>í²¾ Backup DB</Text>
+          <Text style={styles.backupButtonText}>Backup DB</Text>
         </TouchableOpacity>
       </View>
     </View>
