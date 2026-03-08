@@ -9,6 +9,7 @@ import LivresListScreen from './features/livres/screens/LivresListScreen';
 import LivreDetailScreen from './features/livres/screens/LivreDetailScreen';
 import LivreAddScreen from './features/livres/screens/LivreAddScreen';
 import PossessionListScreen from './features/livres/screens/PossessionListScreen';
+import AdminDashboard from './features/admin/screens/AdminDashboard';
 
 type RootStackParamList = {
   Login: undefined;
@@ -17,6 +18,7 @@ type RootStackParamList = {
   LivreDetail: { id: number };
   LivreAdd: undefined;
   Possessions: undefined;
+  AdminPanel: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -39,6 +41,7 @@ function AppStack() {
       <Stack.Screen name="LivreDetail" component={LivreDetailScreen} />
       <Stack.Screen name="LivreAdd" component={LivreAddScreen} />
       <Stack.Screen name="Possessions" component={PossessionListScreen} />
+      <Stack.Screen name="AdminPanel" component={AdminDashboard} />
     </Stack.Navigator>
   );
 }

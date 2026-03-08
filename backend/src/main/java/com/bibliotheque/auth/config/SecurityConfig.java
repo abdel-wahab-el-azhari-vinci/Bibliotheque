@@ -43,7 +43,7 @@ public class SecurityConfig {
             
             // Endpoints publics (accès sans token)
             .authorizeHttpRequests(authorize -> authorize
-                .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/refresh").permitAll()
+                .requestMatchers("/api/setup/init", "/api/auth/login", "/api/auth/register", "/api/auth/refresh").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
                 .anyRequest().authenticated()  // Tous les autres endpoints nécessitent authentication
             )
