@@ -103,4 +103,49 @@ public class AdminTableController {
                 .body(Map.of("success", false, "error", e.getMessage()));
         }
     }
+
+    /**
+     * GET /api/admin/database/tables/{tableName}/dependents
+     * Récupère les tables qui dépendent de cette table via FK
+     */
+    @GetMapping("/tables/{tableName}/dependents")
+    public ResponseEntity<Map<String, Object>> getDependentTables(@PathVariable String tableName) {
+        try {
+            List<String> dependents = tableManagementService.getDependentTables(tableName);
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("tableName", tableName);
+            response.put("dependents", dependents);
+            response.put("count", dependents.size());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("success", false, "error", e.getMessage()));
+        }
+    }
+
+    /**
+     * DELETE /api/admin/database/tables/{tableName}/clear
+     * Vide une table et toutes ses dépendances
+     * Réinitialise les auto-increments
+     */
+    @DeleteMapping("/tables/{tableName}/clear")
+    public ResponseEntity<Map<String, Object>> clearTable(@PathVariable String tableName) {
+        try {
+            List<String> clearedTables = tableManagementService.clearTable(tableName);
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Table cleared successfully");
+            response.put("tableName", tableName);
+            response.put("clearedTables", clearedTables);
+            response.put("count", clearedTables.size());
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("success", false, "error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("success", false, "error", e.getMessage()));
+        }
+    }
 }

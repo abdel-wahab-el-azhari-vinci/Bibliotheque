@@ -60,6 +60,33 @@ export class AdminService {
     );
     return response.data;
   }
+
+  /**
+   * Récupère les tables qui dépendent de cette table
+   */
+  async getDependentTables(tableName: string): Promise<{ dependents: string[], count: number }> {
+    const response = await this.axios.get(
+      `${CONFIG.API_URL}/admin/database/tables/${tableName}/dependents`
+    );
+    return {
+      dependents: response.data.dependents || [],
+      count: response.data.count || 0
+    };
+  }
+
+  /**
+   * Vide une table et ses dépendants
+   */
+  async clearTable(tableName: string): Promise<{ clearedTables: string[], count: number, message: string }> {
+    const response = await this.axios.delete(
+      `${CONFIG.API_URL}/admin/database/tables/${tableName}/clear`
+    );
+    return {
+      clearedTables: response.data.clearedTables || [],
+      count: response.data.count || 0,
+      message: response.data.message || 'Table cleared'
+    };
+  }
 }
 
 export default AdminService;
