@@ -5,10 +5,12 @@ import {
 } from 'react-native';
 import httpClientManager from '../../../shared/api/httpClient';
 import AdminService from '../services/adminService';
+import BackupService from '../services/backupService';
 import TableListScreen from './TableListScreen';
 import DynamicFormScreen from './DynamicFormScreen';
+import BackupScreen from './BackupScreen';
 
-type ScreenType = 'list' | 'form';
+type ScreenType = 'list' | 'form' | 'backups';
 
 /**
  * Écran d'administration principal
@@ -23,6 +25,10 @@ const AdminDashboard: React.FC = () => {
     () => new AdminService(httpClientManager.getClient())
   );
 
+  const [backupService] = useState(
+    () => new BackupService(httpClientManager.getClient())
+  );
+
   const handleSelectTable = (tableName: string) => {
     setSelectedTable(tableName);
     setCurrentScreen('form');
@@ -33,18 +39,32 @@ const AdminDashboard: React.FC = () => {
     setCurrentScreen('list');
   };
 
+  const handleBackupClick = () => {
+    setCurrentScreen('backups');
+  };
+
+  const handleBackupBack = () => {
+    setCurrentScreen('list');
+  };
+
   return (
     <View style={styles.container}>
       {currentScreen === 'list' ? (
         <TableListScreen
           adminService={adminService}
           onSelectTable={handleSelectTable}
+          onBackupClick={handleBackupClick}
         />
-      ) : (
+      ) : currentScreen === 'form' ? (
         <DynamicFormScreen
           tableName={selectedTable!}
           adminService={adminService}
           onBack={handleBackToList}
+        />
+      ) : (
+        <BackupScreen
+          backupService={backupService}
+          onBack={handleBackupBack}
         />
       )}
     </View>

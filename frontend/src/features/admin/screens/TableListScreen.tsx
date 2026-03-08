@@ -2,27 +2,29 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  ScrollView,
   StyleSheet,
   TouchableOpacity,
+  FlatList,
   ActivityIndicator,
   Alert,
-  SafeAreaView,
-  FlatList,
+  ScrollView,
 } from 'react-native';
 import AdminService from '../services/adminService';
 
-interface TableListScreenProps {
+interface Props {
   adminService: AdminService;
   onSelectTable: (tableName: string) => void;
+  onBackupClick?: () => void;
 }
 
 /**
- * Ã‰cran affichant la liste de toutes les tables
+ * Ã‰cran listant toutes les tables de la base de donnÃ©es
+ * Affichage en grille 2x2
  */
-const TableListScreen: React.FC<TableListScreenProps> = ({
-  adminService,
+const TableListScreen: React.FC<Props> = ({ 
+  adminService, 
   onSelectTable,
+  onBackupClick 
 }) => {
   const [tables, setTables] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,15 +38,12 @@ const TableListScreen: React.FC<TableListScreenProps> = ({
     try {
       setLoading(true);
       setError(null);
-      const response = await adminService.getTables();
-      
-      if (response.success) {
-        setTables(response.tables || []);
-      } else {
-        setError('Erreur lors du chargement des tables');
-      }
-    } catch (err: any) {
-      setError(err.message || 'Erreur lors du chargement des tables');
+      const data = await adminService.getTables();
+      setTables(data || []);
+    } catch (err) {
+      console.error('Erreur lors du chargement des tables:', err);
+      setError('Impossible de charger les tables');
+      Alert.alert('Erreur', 'Impossible de charger les tables');
     } finally {
       setLoading(false);
     }
@@ -52,59 +51,76 @@ const TableListScreen: React.FC<TableListScreenProps> = ({
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.centerContent}>
-          <ActivityIndicator size="large" color="#007AFF" />
-          <Text style={styles.loadingText}>Chargement des tables...</Text>
-        </View>
-      </SafeAreaView>
+      <View style={styles.centerContainer}>
+        <ActivityIndicator size="large" color="#007AFF" />
+        <Text style={styles.loadingText}>Chargement des tables...</Text>
+      </View>
     );
   }
 
+  if (error) {
+    return (
+      <View style={styles.centerContainer}>
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={loadTables}>
+          <Text style={styles.buttonText}>RÃ©essayer</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  // Grouper les tables par 2 pour affichage en grille
+  const groupedTables = [];
+  for (let i = 0; i < tables.length; i += 2) {
+    groupedTables.push(tables.slice(i, i + 2));
+  }
+
+  const renderTableItem = ({ item }: { item: string[] }) => (
+    <View style={styles.rowContainer}>
+      {item.map((table, index) => (
+        <TouchableOpacity
+          key={table}
+          style={[
+            styles.tableCard,
+            index === 1 && styles.tableCardRight,
+          ]}
+          onPress={() => onSelectTable(table)}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.tableIcon}>í³‹</Text>
+          <Text style={styles.tableName}>{table}</Text>
+          <Text style={styles.tableAction}>GÃ©rer â†’</Text>
+        </TouchableOpacity>
+      ))}
+      {item.length === 1 && <View style={[styles.tableCard, styles.tableCardRight, styles.emptyCard]} />}
+    </View>
+  );
+
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Gestion des Tables</Text>
-        <Text style={styles.subtitle}>SÃ©lectionnez une table pour ajouter des donnÃ©es</Text>
+        <Text style={styles.subtitle}>SÃ©lectionnez une table pour la modifier</Text>
       </View>
 
-      {error && (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity
-            style={styles.retryButton}
-            onPress={loadTables}
-          >
-            <Text style={styles.retryButtonText}>RÃ©essayer</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
       <FlatList
-        data={tables}
-        keyExtractor={(item) => item}
-        renderItem={({ item: tableName }) => (
-          <TouchableOpacity
-            style={styles.tableItem}
-            onPress={() => onSelectTable(tableName)}
-            activeOpacity={0.7}
-          >
-            <View style={styles.tableItemContent}>
-              <Text style={styles.tableName}>{tableName}</Text>
-              <Text style={styles.tableArrow}>â†’</Text>
-            </View>
-          </TouchableOpacity>
-        )}
-        scrollEnabled={true}
+        data={groupedTables}
+        renderItem={renderTableItem}
+        keyExtractor={(_, index) => `group-${index}`}
+        scrollEnabled={false}
         contentContainerStyle={styles.listContent}
       />
 
-      {tables.length === 0 && !error && (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>Aucune table found</Text>
-        </View>
-      )}
-    </SafeAreaView>
+      <View style={styles.footer}>
+        <TouchableOpacity
+          style={styles.backupButton}
+          onPress={onBackupClick}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.backupButtonText}>í²¾ Backup DB</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 };
 
@@ -113,96 +129,117 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f5f5f5',
   },
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+  },
   header: {
-    padding: 20,
     backgroundColor: '#007AFF',
+    padding: 20,
+    paddingTop: 30,
   },
   title: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: 'bold',
-    color: 'white',
-    marginBottom: 5,
+    color: '#fff',
+    marginBottom: 8,
   },
   subtitle: {
     fontSize: 14,
     color: '#e0e0e0',
   },
   listContent: {
-    padding: 10,
+    padding: 15,
   },
-  tableItem: {
-    backgroundColor: 'white',
-    borderRadius: 8,
-    marginBottom: 10,
-    paddingVertical: 15,
-    paddingHorizontal: 15,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 1.41,
-  },
-  tableItemContent: {
+  rowContainer: {
     flexDirection: 'row',
+    marginBottom: 15,
     justifyContent: 'space-between',
+  },
+  tableCard: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 20,
     alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 140,
+    marginRight: 7,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  tableCardRight: {
+    marginRight: 0,
+    marginLeft: 7,
+  },
+  emptyCard: {
+    opacity: 0,
+  },
+  tableIcon: {
+    fontSize: 32,
+    marginBottom: 10,
   },
   tableName: {
     fontSize: 16,
     fontWeight: '600',
     color: '#333',
-    flex: 1,
+    marginBottom: 8,
+    textAlign: 'center',
   },
-  tableArrow: {
-    fontSize: 20,
+  tableAction: {
+    fontSize: 12,
     color: '#007AFF',
-    marginLeft: 10,
-  },
-  centerContent: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    fontWeight: '500',
   },
   loadingText: {
-    fontSize: 16,
+    marginTop: 15,
+    fontSize: 14,
     color: '#666',
-    marginTop: 10,
-  },
-  errorContainer: {
-    backgroundColor: '#ffebee',
-    marginHorizontal: 10,
-    marginTop: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 15,
-    borderRadius: 8,
-    borderLeftWidth: 4,
-    borderLeftColor: '#f44336',
   },
   errorText: {
-    fontSize: 14,
-    color: '#c62828',
-    marginBottom: 8,
+    fontSize: 16,
+    color: '#e74c3c',
+    textAlign: 'center',
+    marginHorizontal: 20,
   },
   retryButton: {
-    backgroundColor: '#f44336',
-    paddingVertical: 8,
-    paddingHorizontal: 15,
-    borderRadius: 4,
-    alignSelf: 'flex-start',
+    marginTop: 20,
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 30,
+    paddingVertical: 12,
+    borderRadius: 8,
   },
-  retryButtonText: {
-    color: 'white',
+  buttonText: {
+    color: '#fff',
     fontWeight: '600',
-    fontSize: 12,
+    fontSize: 14,
   },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
+  footer: {
+    padding: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
+    backgroundColor: '#fff',
+  },
+  backupButton: {
+    backgroundColor: '#34C759',
+    paddingVertical: 14,
+    borderRadius: 10,
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  emptyText: {
+  backupButtonText: {
+    color: '#fff',
+    fontWeight: '700',
     fontSize: 16,
-    color: '#999',
   },
 });
 
