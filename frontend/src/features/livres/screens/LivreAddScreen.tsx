@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { livresApi, auteursApi, genresApi, languesApi } from '../api/livresApi';
+import { bookSearchService } from '../api/bookSearchService';
 import { colors, spacing, fontSizes, fontWeights, commonStyles } from '../../../theme';
 import type { Auteur, Genre, Langue, LivreRequest } from '../types';
 
@@ -45,6 +46,7 @@ export default function LivreAddScreen({ navigation }: Props) {
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [searchingBook, setSearchingBook] = useState(false);
 
   const [openAuteurModal, setOpenAuteurModal] = useState(false);
   const [openGenreModal, setOpenGenreModal] = useState(false);
@@ -78,10 +80,11 @@ export default function LivreAddScreen({ navigation }: Props) {
     }
   };
 
-  const handleBarCodeScanned = (code: any) => {
+  const handleBarCodeScanned = async (code: any) => {
     if (!code || !scanning) return;
 
     setScanning(false);
+    setSearchingBook(true);
 
     // Extract ISBN from barcode (expo-camera Vision API uses 'data')
     let isbn = code.data || code.displayValue || code.value || "";
@@ -89,22 +92,76 @@ export default function LivreAddScreen({ navigation }: Props) {
     // Remove hyphens or spaces
     isbn = isbn.replace(/[-\s]/g, '');
 
-    console.log('Full barcode object:', code);
-    console.log('Scanned barcode type:', code.type);
-    console.log('Extracted ISBN:', isbn);
-
-    // Update form with ISBN
-    setFormData({ ...formData, isbn });
+    console.log('��� ISBN scanné:', isbn);
 
     // Close scanner
     setOpenScanner(false);
 
-    Alert.alert('Succès', `ISBN détecté: ${isbn}`, [
-      {
-        text: 'OK',
-        onPress: () => setScanning(true),
-      },
-    ]);
+    // Rechercher les infos du livre
+    const bookInfo = await bookSearchService.searchByISBN(isbn);
+    setSearchingBook(false);
+
+    if (!bookInfo) {
+      Alert.alert(
+        '⚠️ Livre non trouvé',
+        `Aucun livre trouvé pour l'ISBN ${isbn}.\nVous pouvez remplir les infos manuellement.`,
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              // Au moins mettre l'ISBN
+              setFormData((prev) => ({ ...prev, isbn }));
+              setScanning(true);
+            },
+          },
+        ]
+      );
+      return;
+    }
+
+    // Auto-compléter les champs
+    console.log('✅ Infos trouvées:', bookInfo);
+
+    // Remplir le titre, ISBN et résumé
+    setFormData((prev) => ({
+      ...prev,
+      titre: bookInfo.titre,
+      isbn: bookInfo.isbn,
+      resume: bookInfo.resume || '',
+    }));
+
+    // Chercher et sélectionner l'auteur
+    if (bookInfo.auteur && auteurs.length > 0) {
+      const matchingAuteur = auteurs.find(
+        (a) =>
+          a.nom.toLowerCase().includes(bookInfo.auteur.toLowerCase()) ||
+          bookInfo.auteur.toLowerCase().includes(a.nom.toLowerCase())
+      );
+      if (matchingAuteur) {
+        setSelectedAuteur(matchingAuteur);
+      }
+    }
+
+    // Chercher et sélectionner la langue
+    if (bookInfo.langue && langues.length > 0) {
+      const matchingLangue = langues.find(
+        (l) => l.libelle.toLowerCase() === bookInfo.langue!.toLowerCase()
+      );
+      if (matchingLangue) {
+        setSelectedLangue(matchingLangue);
+      }
+    }
+
+    // Afficher un message de succès avec les infos
+    Alert.alert('✅ Succès!', 
+      `Titre: ${bookInfo.titre}\nAuteur: ${bookInfo.auteur || 'Non trouvé'}\n\nVérifiez les infos et appuyez sur Enregistrer`,
+      [
+        {
+          text: 'OK',
+          onPress: () => setScanning(true),
+        },
+      ]
+    );
   };
 
   const handleOpenScanner = async () => {
@@ -262,14 +319,26 @@ export default function LivreAddScreen({ navigation }: Props) {
               placeholderTextColor={colors.gray}
               value={formData.isbn || ''}
               onChangeText={(text) => setFormData({ ...formData, isbn: text })}
+              editable={!searchingBook}
             />
             <TouchableOpacity 
-              style={styles.scanButton}
+              style={[styles.scanButton, searchingBook && styles.scanButtonDisabled]}
               onPress={handleOpenScanner}
+              disabled={searchingBook}
             >
-              <Ionicons name="camera" size={20} color={colors.white} />
-              <Text style={styles.scanButtonText}>Scanner</Text>
+              {searchingBook ? (
+                <ActivityIndicator size="small" color={colors.white} />
+              ) : (
+                <>
+                  <Ionicons name="camera" size={20} color={colors.white} />
+                  <Text style={styles.scanButtonText}>Scanner</Text>
+                </>
+              )}
             </TouchableOpacity>
+          </View>
+          <View style={styles.infoBox}>
+            <Ionicons name="information-circle" size={16} color={colors.primary} />
+            <Text style={styles.infoText}>Scannez un code-barres ISBN pour auto-compléter les infos du livre</Text>
           </View>
         </View>
 
@@ -366,9 +435,9 @@ export default function LivreAddScreen({ navigation }: Props) {
 
         {/* Submit Button */}
         <TouchableOpacity
-          style={[styles.submitButton, submitting && styles.submitButtonDisabled]}
+          style={[styles.submitButton, (submitting || searchingBook) && styles.submitButtonDisabled]}
           onPress={handleSubmit}
-          disabled={submitting}
+          disabled={submitting || searchingBook}
         >
           {submitting ? (
             <ActivityIndicator color={colors.white} />
@@ -479,7 +548,7 @@ export default function LivreAddScreen({ navigation }: Props) {
                 style={styles.scanner}
                 facing="back"
                 onBarcodeScanned={scanning ? handleBarCodeScanned : undefined}
-                />
+              />
               <View style={styles.scannerOverlay}>
                 <View style={styles.scannerFrame} />
               </View>
@@ -499,7 +568,7 @@ export default function LivreAddScreen({ navigation }: Props) {
                 style={styles.permissionButton}
                 onPress={requestPermission}
               >
-                <Text style={styles.permissionButtonText}>Accorder la permission</Text>
+                <Text style={styles.permissionButtonText}>Autoriser</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -527,11 +596,12 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.lg,
     fontWeight: fontWeights.semibold,
     color: colors.white,
+    flex: 1,
+    textAlign: 'center',
   },
   content: {
     flex: 1,
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.md,
+    padding: spacing.md,
   },
   centerContent: {
     flex: 1,
@@ -539,7 +609,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    fontSize: fontSizes.md,
+    fontSize: fontSizes.base,
     color: colors.gray,
     marginTop: spacing.md,
   },
@@ -547,25 +617,23 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   sectionTitle: {
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.base,
     fontWeight: fontWeights.semibold,
-    color: colors.primary,
-    marginBottom: spacing.xs,
-    textTransform: 'uppercase',
+    color: colors.dark,
+    marginBottom: spacing.sm,
   },
   textInput: {
+    backgroundColor: colors.white,
     borderWidth: 1,
-    borderColor: colors.lightGray,
+    borderColor: colors.border,
     borderRadius: 8,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
-    fontSize: fontSizes.md,
-    color: colors.text,
-    backgroundColor: colors.white,
-    flex: 1,
+    fontSize: fontSizes.base,
+    color: colors.dark,
   },
   textArea: {
-    minHeight: 120,
+    height: 100,
     textAlignVertical: 'top',
   },
   isbnInputContainer: {
@@ -575,62 +643,80 @@ const styles = StyleSheet.create({
   },
   scanButton: {
     backgroundColor: colors.primary,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
-    borderRadius: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  scanButtonText: {
-    color: colors.white,
-    fontSize: fontSizes.sm,
-    fontWeight: fontWeights.semibold,
-  },
-  dropdownInput: {
-    borderWidth: 1,
-    borderColor: colors.lightGray,
     borderRadius: 8,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
+    justifyContent: 'center',
+  },
+  scanButtonDisabled: {
+    opacity: 0.6,
+  },
+  scanButtonText: {
+    color: colors.white,
+    fontWeight: fontWeights.semibold,
+    fontSize: fontSizes.sm,
+  },
+  infoBox: {
+    backgroundColor: '#E3F2FD',
+    borderRadius: 8,
+    padding: spacing.sm,
+    marginTop: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+  },
+  infoText: {
+    fontSize: fontSizes.xs,
+    color: colors.primary,
+    flex: 1,
+    lineHeight: 16,
+  },
+  dropdownInput: {
     backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
   },
   dropdownIcon: {
-    marginRight: spacing.xs,
+    marginRight: spacing.sm,
   },
   dropdownText: {
-    fontSize: fontSizes.md,
-    color: colors.text,
     flex: 1,
+    fontSize: fontSizes.base,
+    color: colors.dark,
   },
   dropdownPlaceholder: {
     color: colors.gray,
   },
   submitButton: {
     backgroundColor: colors.primary,
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.lg,
     borderRadius: 8,
+    paddingVertical: spacing.md,
+    marginVertical: spacing.lg,
     flexDirection: 'row',
-    justifyContent: 'center',
     alignItems: 'center',
-    gap: spacing.md,
-    marginBottom: spacing.xl,
+    justifyContent: 'center',
+    gap: spacing.sm,
   },
   submitButtonDisabled: {
     opacity: 0.6,
   },
   submitButtonText: {
     color: colors.white,
-    fontSize: fontSizes.md,
+    fontSize: fontSizes.base,
     fontWeight: fontWeights.semibold,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'flex-end',
   },
   modalContent: {
@@ -638,105 +724,104 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     maxHeight: '80%',
+    paddingTop: spacing.md,
   },
   modalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
+    paddingBottom: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: colors.lightGray,
+    borderBottomColor: colors.border,
   },
   modalTitle: {
-    fontSize: fontSizes.lg,
+    fontSize: fontSizes.base,
     fontWeight: fontWeights.semibold,
-    color: colors.text,
+    color: colors.dark,
+    flex: 1,
   },
   modalItem: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.lightGray,
   },
   modalItemText: {
-    fontSize: fontSizes.md,
-    color: colors.text,
+    fontSize: fontSizes.base,
+    color: colors.dark,
+    flex: 1,
   },
   scannerContainer: {
     flex: 1,
     backgroundColor: colors.dark,
   },
   scannerHeader: {
-    backgroundColor: colors.dark,
+    backgroundColor: colors.primary,
     paddingHorizontal: spacing.md,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.md,
+    paddingVertical: spacing.lg,
+    paddingTop: spacing.xl,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
   scannerTitle: {
+    color: colors.white,
     fontSize: fontSizes.lg,
     fontWeight: fontWeights.semibold,
-    color: colors.white,
+    textAlign: 'center',
+    flex: 1,
   },
   scanner: {
     flex: 1,
   },
   scannerOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    ...StyleSheet.absoluteFillObject,
     justifyContent: 'center',
     alignItems: 'center',
-    pointerEvents: 'none',
   },
   scannerFrame: {
-    width: 300,
-    height: 200,
+    width: 250,
+    height: 100,
     borderWidth: 2,
-    borderColor: colors.primary,
+    borderColor: colors.white,
     borderRadius: 8,
-    backgroundColor: 'transparent',
+    opacity: 0.5,
   },
   scannerFooter: {
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    backgroundColor: 'rgba(0,0,0,0.8)',
     paddingVertical: spacing.lg,
     paddingHorizontal: spacing.md,
+    alignItems: 'center',
   },
   scannerText: {
     color: colors.white,
-    fontSize: fontSizes.md,
+    fontSize: fontSizes.base,
     textAlign: 'center',
   },
   permissionError: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.lg,
+    gap: spacing.lg,
   },
   permissionErrorText: {
-    fontSize: fontSizes.md,
     color: colors.white,
-    marginTop: spacing.md,
+    fontSize: fontSizes.base,
     textAlign: 'center',
   },
   permissionButton: {
     backgroundColor: colors.primary,
-    paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     borderRadius: 8,
-    marginTop: spacing.lg,
   },
   permissionButtonText: {
     color: colors.white,
-    fontSize: fontSizes.md,
     fontWeight: fontWeights.semibold,
   },
 });

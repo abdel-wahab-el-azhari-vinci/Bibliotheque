@@ -8,11 +8,13 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { livresApi } from '../api/livresApi';
 import { possessionApi } from '../api/possessionApi';
+import { useAuth } from '../../auth/context/AuthContext';
 import { colors, spacing, fontSizes, fontWeights, commonStyles } from '../../../theme';
 import type { Livre } from '../types';
 
@@ -26,9 +28,13 @@ type Props = NativeStackScreenProps<RootStackParamList, 'LivreDetail'>;
 
 export default function LivreDetailScreen({ route, navigation }: Props) {
   const { id } = route.params;
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'ADMIN';
+  
   const [livre, setLivre] = useState<Livre | null>(null);
   const [loading, setLoading] = useState(true);
   const [borrowing, setBorrowing] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     loadLivre();
@@ -48,6 +54,11 @@ export default function LivreDetailScreen({ route, navigation }: Props) {
     }
   };
 
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadLivre();
+    setRefreshing(false);
+  };
 
   const handleBorrow = async () => {
     if (!livre) return;
@@ -97,7 +108,13 @@ export default function LivreDetailScreen({ route, navigation }: Props) {
   }
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView 
+      style={styles.container} 
+      showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+    >
       {/* Header with back button */}
       <View style={[styles.header, commonStyles.shadowLarge]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
@@ -106,6 +123,14 @@ export default function LivreDetailScreen({ route, navigation }: Props) {
         <Text style={styles.headerTitle}>Détails du livre</Text>
         <View style={styles.spacer} />
       </View>
+
+      {/* Admin Badge */}
+      {isAdmin && (
+        <View style={styles.adminBadge}>
+          <Ionicons name="shield-checkmark" size={16} color={colors.primary} />
+          <Text style={styles.adminBadgeText}>Vue Admin</Text>
+        </View>
+      )}
 
       {/* Book Cover Placeholder */}
       <View style={styles.bookCoverContainer}>
@@ -199,33 +224,52 @@ export default function LivreDetailScreen({ route, navigation }: Props) {
           </View>
         )}
 
-        {/* Borrow Button */}
-        <TouchableOpacity
-          style={[
-            styles.borrowButton,
-            (borrowing || livre?.statusStock !== 'EN_STOCK') && styles.borrowButtonDisabled,
-          ]}
-          onPress={handleBorrow}
-          disabled={borrowing || livre?.statusStock !== 'EN_STOCK'}
-          activeOpacity={0.7}
-        >
-          <Ionicons
-            name="download"
-            size={20}
-            color={
-              borrowing || livre?.statusStock !== 'EN_STOCK' ? colors.gray : colors.white
-            }
-          />
-          <Text
+        {/* Admin Stock Display */}
+        {isAdmin && (
+          <View style={styles.adminStockContainer}>
+            <View style={styles.adminStockHeader}>
+              <Ionicons name="server" size={20} color={colors.primary} />
+              <Text style={styles.adminStockTitle}>Stock</Text>
+            </View>
+            <View style={styles.adminStockContent}>
+              <View style={styles.stockInfoRow}>
+                <Text style={styles.stockLabel}>Exemplaires disponibles :</Text>
+                <Text style={styles.stockValue}>{livre?.nbExemplairesDisponibles ?? 0}</Text>
+              </View>
+              <Text style={styles.stockUpdateInfo}>Tirez pour actualiser</Text>
+            </View>
+          </View>
+        )}
+
+        {/* Borrow Button - Hidden for Admin */}
+        {!isAdmin && (
+          <TouchableOpacity
             style={[
-              styles.borrowButtonText,
-              (borrowing || livre?.statusStock !== 'EN_STOCK') && styles.borrowButtonTextDisabled,
+              styles.borrowButton,
+              (borrowing || livre?.statusStock !== 'EN_STOCK') && styles.borrowButtonDisabled,
             ]}
+            onPress={handleBorrow}
+            disabled={borrowing || livre?.statusStock !== 'EN_STOCK'}
+            activeOpacity={0.7}
           >
-            {borrowing ? 'Emprunt en cours...' : 'Emprunter ce livre'}
-          </Text>
-          {borrowing && <ActivityIndicator color={colors.primary} style={{ marginLeft: spacing.sm }} />}
-        </TouchableOpacity>
+            <Ionicons
+              name="download"
+              size={20}
+              color={
+                borrowing || livre?.statusStock !== 'EN_STOCK' ? colors.gray : colors.white
+              }
+            />
+            <Text
+              style={[
+                styles.borrowButtonText,
+                (borrowing || livre?.statusStock !== 'EN_STOCK') && styles.borrowButtonTextDisabled,
+              ]}
+            >
+              {borrowing ? 'Emprunt en cours...' : 'Emprunter ce livre'}
+            </Text>
+            {borrowing && <ActivityIndicator color={colors.primary} style={{ marginLeft: spacing.sm }} />}
+          </TouchableOpacity>
+        )}
       </View>
     </ScrollView>
   );
@@ -265,6 +309,23 @@ const styles = StyleSheet.create({
   spacer: {
     width: 40,
   },
+  adminBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginHorizontal: spacing.md,
+    marginTop: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.lightGray,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+  },
+  adminBadgeText: {
+    fontSize: fontSizes.sm,
+    fontWeight: fontWeights.semibold,
+    color: colors.primary,
+  },
   bookCoverContainer: {
     paddingVertical: spacing.lg,
     justifyContent: 'center',
@@ -292,13 +353,13 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   statusBannerAvailable: {
-    backgroundColor: colors.lightSuccess,
+    backgroundColor: colors.lightGray,
   },
   statusBannerUnavailable: {
-    backgroundColor: colors.lightDanger,
+    backgroundColor: colors.lightGray,
   },
   statusBannerText: {
-    fontSize: fontSizes.md,
+    fontSize: fontSizes.base,
     fontWeight: fontWeights.semibold,
   },
   statusBannerTextAvailable: {
@@ -309,78 +370,122 @@ const styles = StyleSheet.create({
   },
   detailsContainer: {
     paddingHorizontal: spacing.md,
-    paddingBottom: spacing.xl,
+    paddingVertical: spacing.md,
+    paddingBottom: spacing.lg,
   },
   titre: {
-    fontSize: fontSizes.xxl,
+    fontSize: fontSizes.xl,
     fontWeight: fontWeights.bold,
-    color: colors.text,
+    color: colors.dark,
     marginBottom: spacing.md,
   },
   metadataContainer: {
     gap: spacing.md,
     marginBottom: spacing.lg,
-    paddingBottom: spacing.lg,
-    borderBottomColor: colors.lightGray,
-    borderBottomWidth: 1,
   },
   metadataItem: {
-    gap: spacing.xs,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.md,
   },
   metadataLabel: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
-    marginBottom: spacing.xs,
+    gap: spacing.sm,
+    flex: 0.4,
   },
   metadataLabelText: {
     fontSize: fontSizes.sm,
     fontWeight: fontWeights.semibold,
-    color: colors.primary,
+    color: colors.dark,
   },
   metadataValue: {
-    fontSize: fontSizes.md,
-    color: colors.text,
-    marginLeft: spacing.lg,
+    fontSize: fontSizes.base,
+    color: colors.dark,
+    flex: 0.6,
   },
   resumeSection: {
     marginBottom: spacing.lg,
   },
   resumeLabel: {
-    fontSize: fontSizes.lg,
+    fontSize: fontSizes.base,
     fontWeight: fontWeights.semibold,
-    color: colors.text,
-    marginBottom: spacing.md,
+    color: colors.dark,
+    marginBottom: spacing.sm,
   },
   resumeText: {
-    fontSize: fontSizes.md,
+    fontSize: fontSizes.sm,
+    color: colors.dark,
+    lineHeight: 20,
+  },
+  adminStockContainer: {
+    backgroundColor: colors.lightGray,
+    borderRadius: 8,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.primary,
+  },
+  adminStockHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  adminStockTitle: {
+    fontSize: fontSizes.base,
+    fontWeight: fontWeights.semibold,
+    color: colors.primary,
+  },
+  adminStockContent: {
+    gap: spacing.md,
+  },
+  stockInfoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  stockLabel: {
+    fontSize: fontSizes.base,
+    color: colors.dark,
+    fontWeight: fontWeights.medium,
+  },
+  stockValue: {
+    fontSize: fontSizes.lg,
+    fontWeight: fontWeights.bold,
+    color: colors.primary,
+  },
+  stockUpdateInfo: {
+    fontSize: fontSizes.xs,
     color: colors.gray,
-    lineHeight: 24,
+    fontStyle: 'italic',
+    textAlign: 'center',
   },
   borrowButton: {
     backgroundColor: colors.primary,
+    borderRadius: 8,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
-    borderRadius: 8,
     flexDirection: 'row',
-    justifyContent: 'center',
     alignItems: 'center',
-    gap: spacing.md,
-    ...commonStyles.shadowLarge,
+    justifyContent: 'center',
+    gap: spacing.sm,
+    ...commonStyles.shadow,
   },
   borrowButtonDisabled: {
-    backgroundColor: colors.lightGray,
+    backgroundColor: colors.gray,
+    opacity: 0.6,
   },
   borrowButtonText: {
     color: colors.white,
-    fontSize: fontSizes.md,
+    fontSize: fontSizes.base,
     fontWeight: fontWeights.semibold,
   },
   borrowButtonTextDisabled: {
     color: colors.gray,
   },
   errorText: {
-    fontSize: fontSizes.lg,
+    fontSize: fontSizes.base,
     color: colors.danger,
     marginTop: spacing.md,
   },

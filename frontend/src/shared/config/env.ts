@@ -6,8 +6,8 @@ const getApiUrl = () => {
     return 'http://localhost:8083/api';
   }
 
-  // Mobile: IP locale du PC (192.168.129.6 = Wi-Fi actif)
-  return 'http://192.168.129.6:8083/api';
+  // Mobile: IP locale du PC (10.179.194.62 = 5G actif)
+  return 'http://10.179.194.62:8083/api';
 };
 
 export const CONFIG = {
