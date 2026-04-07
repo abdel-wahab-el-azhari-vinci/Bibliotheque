@@ -1,7 +1,20 @@
 # ==================
+# Rapport de stage et documents
+# ==================
+Terra_sana.docx
+FRONTEND_STATUS.md
+TEST_EXPO_GO.md
+
+# ==================
+# Markdown files (except README)
+# ==================
+*.md
+!README.md
+
+# ==================
 # AI Rules & Documentation
 # ==================
-AI_RULES.md
+# AI_RULES.md is kept in repo on main branch
 
 # ==================
 # IDE & Editor
@@ -37,61 +50,25 @@ build/
 __pycache__/
 *.py[cod]
 *$py.class
+*.so
 .Python
 env/
 venv/
 ENV/
-.venv
 
 # ==================
-# Logs & Temp
-# ==================
-*.log
-*.log.*
-/logs/
-/tmp/
-/temp/
-
-# ==================
-# Environment & Config
-# ==================
-.env
-.env.local
-.env.*.local
-.env.test
-.env.production
-
-# ==================
-# Build & Dependencies
+# Java & Maven
 # ==================
 target/
-build/
-dist/
-.gradle/
+*.class
+*.jar
+*.war
+*.ear
 .m2/
 
 # ==================
-# OS & System
+# Misc
 # ==================
-Thumbs.db
-.DS_Store
-
-# ==================
-# IDE Specific
-# ==================
-*.iml
-*.iws
-*.ipr
-out/
-.classpath
-.project
-.settings/
-*.launch
-
-# ==================
-# Database
-# ==================
-*.db
-*.sqlite
-*.h2.db
-*.sqlite3
+.env
+.env.local
+*.log

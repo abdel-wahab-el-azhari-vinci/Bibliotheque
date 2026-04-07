@@ -1,50 +1,26 @@
 package com.bibliotheque.auth.dto;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
- * DTO retourné au frontend après un login réussi.
- * IMPORTANT : Le password n'est JAMAIS inclus dans cette réponse.
+ * DTO LoginResponse - Output après authentification réussie
+ * Contient le token JWT à utiliser pour les requêtes suivantes
  */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class LoginResponse {
-
-    /**
-     * ID de l'utilisateur
-     */
-    private Long id;
-
-    /**
-     * Email de l'utilisateur
-     */
-    private String email;
-
-    /**
-     * Nom de famille
-     */
-    private String nom;
-
-    /**
-     * Prénom de l'utilisateur
-     */
-    private String prenom;
-
-    /**
-     * Rôle de l'utilisateur (utilisé par le frontend pour permissions)
-     */
-    private String role;
-
-    /**
-     * JWT Token à stocker côté frontend et inclure dans les futurs appels
-     * Format : Bearer <token>
-     */
+    
     private String token;
-
-    /**
-     * Statut de l'utilisateur (pour vérifier si compte actif)
-     */
-    private String status;
+    private String refreshToken;
+    private Long userId;
+    private String email;
+    private String nom;
+    private String prenom;
+    private String role;
+    private Long expiresIn;  // Durée de vie du token en secondes
 }

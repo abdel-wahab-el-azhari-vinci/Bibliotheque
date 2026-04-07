@@ -1,0 +1,12 @@
+      {/* User info */}
+      {user ? (
+        <View style={styles.userInfo}>
+          <Text style={styles.userText}>
+            Bienvenue, {user.nom || 'Utilisateur'} {user.prenom || ''}
+          </Text>
+        </View>
+      ) : (
+        <View style={styles.userInfo}>
+          <Text style={styles.userText}>Connexion...</Text>
+        </View>
+      )}

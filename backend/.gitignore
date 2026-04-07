@@ -89,3 +89,9 @@ application-dev.properties
 node_modules/
 npm-debug.log
 yarn-error.log
+
+# ==================
+# Documentation (Markdown)
+# ==================
+*.md
+!README.md
