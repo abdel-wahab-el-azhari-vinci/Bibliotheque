@@ -1,13 +1,14 @@
 import { Platform } from 'react-native';
 
 const getApiUrl = () => {
-  // Dev local web
+  // Dev web local
   if (Platform.OS === 'web') {
     return 'http://localhost:8083/api';
   }
 
-  // Mobile: IP locale du PC (10.179.194.62 = 5G actif)
-  return 'http://10.179.194.62:8083/api';
+  // Mobile: IP locale personnelle (Wi-Fi - 192.168.129.6)
+  // Ne pas utiliser 5G - utiliser votre IP personnelle
+  return 'http://192.168.129.6:8083/api';
 };
 
 export const CONFIG = {
