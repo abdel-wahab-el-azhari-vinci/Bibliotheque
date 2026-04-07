@@ -109,3 +109,9 @@ venv/
 .env
 .env.local
 .env.*.local
+
+# ==================
+# Documentation (Markdown)
+# ==================
+*.md
+!README.md

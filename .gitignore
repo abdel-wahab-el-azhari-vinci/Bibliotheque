@@ -3,3 +3,7 @@
 Terra_sana.docx
 FRONTEND_STATUS.md
 TEST_EXPO_GO.md
+
+# Ignore all .md files except README.md
+*.md
+!README.md
