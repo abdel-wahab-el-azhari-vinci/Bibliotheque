@@ -1,9 +1,74 @@
-
+# ==================
 # Rapport de stage et documents
+# ==================
 Terra_sana.docx
 FRONTEND_STATUS.md
 TEST_EXPO_GO.md
 
-# Ignore all .md files except README.md
+# ==================
+# Markdown files (except README)
+# ==================
 *.md
 !README.md
+
+# ==================
+# AI Rules & Documentation
+# ==================
+# AI_RULES.md is kept in repo on main branch
+
+# ==================
+# IDE & Editor
+# ==================
+.vscode/
+.idea/
+*.code-workspace
+*.swp
+*.swo
+*~
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ==================
+# Node.js & npm
+# ==================
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+dist/
+build/
+
+# ==================
+# Python
+# ==================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+
+# ==================
+# Java & Maven
+# ==================
+target/
+*.class
+*.jar
+*.war
+*.ear
+.m2/
+
+# ==================
+# Misc
+# ==================
+.env
+.env.local
+*.log
