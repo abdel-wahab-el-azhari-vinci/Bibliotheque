@@ -339,7 +339,7 @@ const styles = StyleSheet.create({
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
+    gap: spacing.md,
   },
   headerTitle: {
     fontSize: fontSizes['2xl'],
@@ -552,6 +552,9 @@ const styles = StyleSheet.create({
     right: spacing.lg,
   },
   fab: {
+    position: 'absolute',
+    bottom: spacing.xl,
+    right: spacing.xl,
     width: 60,
     height: 60,
     borderRadius: 30,

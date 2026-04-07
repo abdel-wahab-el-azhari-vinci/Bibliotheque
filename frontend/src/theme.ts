@@ -13,6 +13,9 @@ export const colors = {
   white: '#ffffff',        // Blanc
   border: '#dddddd',       // Gris bordure
   background: '#f9f9f9',   // Gris background
+  lightSuccess: '#d4edda', // Vert très clair
+  lightDanger: '#f8d7da',  // Rouge très clair
+  text: '#222222',         // Texte foncé
 };
 
 // Spacing
@@ -36,6 +39,7 @@ export const fontSizes = {
   '3xl': 24,
   '4xl': 28,
   '5xl': 32,
+  md: 14,
 };
 
 // Font Weights
