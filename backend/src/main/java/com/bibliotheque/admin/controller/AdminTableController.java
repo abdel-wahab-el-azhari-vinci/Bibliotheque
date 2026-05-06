@@ -1,5 +1,6 @@
 package com.bibliotheque.admin.controller;
 
+import com.bibliotheque.admin.dto.ForeignKeyInfoDTO;
 import com.bibliotheque.admin.service.TableManagementService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -52,6 +53,27 @@ public class AdminTableController {
             response.put("tableName", tableName);
             response.put("schema", schema);
             response.put("columns", schema.size());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("success", false, "error", e.getMessage()));
+        }
+    }
+
+    /**
+     * GET /api/admin/database/tables/{tableName}/foreign-keys
+     * Récupère les informations des clés étrangères d'une table
+     * Inclut les options de chaque clé étrangère avec labels lisibles
+     */
+    @GetMapping("/tables/{tableName}/foreign-keys")
+    public ResponseEntity<Map<String, Object>> getForeignKeyInfo(@PathVariable String tableName) {
+        try {
+            List<ForeignKeyInfoDTO> foreignKeys = tableManagementService.getForeignKeyInfo(tableName);
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("tableName", tableName);
+            response.put("foreignKeys", foreignKeys);
+            response.put("count", foreignKeys.size());
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

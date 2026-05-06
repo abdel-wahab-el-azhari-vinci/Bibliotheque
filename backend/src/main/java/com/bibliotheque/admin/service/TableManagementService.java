@@ -1,9 +1,12 @@
 package com.bibliotheque.admin.service;
 
+import com.bibliotheque.admin.dto.ForeignKeyInfoDTO;
+import com.bibliotheque.admin.dto.ForeignKeyOptionDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Service pour gérer les tables dynamiquement
@@ -14,6 +17,19 @@ import java.util.*;
 public class TableManagementService {
 
     private final JdbcTemplate jdbcTemplate;
+    
+    // Mapping des tables avec leurs colonnes de label
+    private static final Map<String, String> TABLE_LABEL_COLUMNS = Map.ofEntries(
+        Map.entry("auteur", "nom"),
+        Map.entry("genre", "libelle"),
+        Map.entry("langue", "libelle"),
+        Map.entry("pays", "nom_pays"),
+        Map.entry("categorie", "libelle"),
+        Map.entry("users", "email"),
+        Map.entry("livre", "titre"),
+        Map.entry("commune", "nom"),
+        Map.entry("code_postal", "code")
+    );
 
     /**
      * Récupère la liste de toutes les tables de la base de données
@@ -29,6 +45,112 @@ public class TableManagementService {
     public List<Map<String, Object>> getTableSchema(String tableName) {
         String query = "SELECT COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE, COLUMN_KEY, EXTRA FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?";
         return jdbcTemplate.queryForList(query, tableName);
+    }
+
+    /**
+     * Récupère les informations des clés étrangères d'une table
+     * Inclut les options pour chaque clé étrangère
+     */
+    public List<ForeignKeyInfoDTO> getForeignKeyInfo(String tableName) {
+        try {
+            // Récupérer les FKs
+            List<Map<String, Object>> fks = getForeignKeysForTable(tableName);
+            
+            List<ForeignKeyInfoDTO> result = new ArrayList<>();
+            
+            for (Map<String, Object> fk : fks) {
+                String columnName = (String) fk.get("COLUMN_NAME");
+                String referencedTable = (String) fk.get("REFERENCED_TABLE_NAME");
+                
+                if (columnName != null && referencedTable != null) {
+                    // Déterminer la colonne label pour la table référencée
+                    String labelColumn = getLabelColumn(referencedTable);
+                    
+                    // Récupérer les données de la table référencée
+                    List<ForeignKeyOptionDTO> options = getForeignKeyData(referencedTable, labelColumn);
+                    
+                    ForeignKeyInfoDTO info = new ForeignKeyInfoDTO();
+                    info.setColumnName(columnName);
+                    info.setReferencedTable(referencedTable);
+                    info.setLabelColumn(labelColumn);
+                    info.setOptions(options);
+                    
+                    result.add(info);
+                }
+            }
+            
+            return result;
+        } catch (Exception e) {
+            // Retourner une liste vide si une erreur survient
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * Récupère les clés étrangères d'une table
+     */
+    private List<Map<String, Object>> getForeignKeysForTable(String tableName) {
+        String query = "SELECT COLUMN_NAME, REFERENCED_TABLE_NAME " +
+                      "FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE " +
+                      "WHERE TABLE_SCHEMA = DATABASE() " +
+                      "AND TABLE_NAME = ? " +
+                      "AND REFERENCED_TABLE_NAME IS NOT NULL";
+        return jdbcTemplate.queryForList(query, tableName);
+    }
+
+    /**
+     * Détecte la colonne à afficher comme label pour une table
+     * Essaie plusieurs colonnes communes (nom, libelle, email, titre, etc.)
+     */
+    private String getLabelColumn(String tableName) {
+        // Vérifier d'abord dans le mapping statique
+        if (TABLE_LABEL_COLUMNS.containsKey(tableName)) {
+            return TABLE_LABEL_COLUMNS.get(tableName);
+        }
+        
+        // Liste des noms de colonnes à essayer
+        String[] candidateColumns = {"nom", "libelle", "email", "titre", "description", "name", "label"};
+        
+        try {
+            List<Map<String, Object>> columns = getTableSchema(tableName);
+            Set<String> columnNames = columns.stream()
+                .map(c -> (String) c.get("COLUMN_NAME"))
+                .collect(Collectors.toSet());
+            
+            // Retourner la première colonne candidate qui existe
+            for (String candidate : candidateColumns) {
+                if (columnNames.contains(candidate)) {
+                    return candidate;
+                }
+            }
+            
+            // Par défaut, retourner "id" si rien n'est trouvé
+            return "id";
+        } catch (Exception e) {
+            return "id";
+        }
+    }
+
+    /**
+     * Récupère les données d'une table pour les afficher comme options
+     * Format: [{id: 1, label: "Valeur 1"}, ...]
+     */
+    private List<ForeignKeyOptionDTO> getForeignKeyData(String tableName, String labelColumn) {
+        try {
+            String query = "SELECT id, " + labelColumn + " as label FROM " + tableName + " ORDER BY " + labelColumn;
+            
+            List<Map<String, Object>> rows = jdbcTemplate.queryForList(query);
+            
+            return rows.stream()
+                .map(row -> new ForeignKeyOptionDTO(
+                    ((Number) row.get("id")).longValue(),
+                    String.valueOf(row.get("label"))
+                ))
+                .collect(Collectors.toList());
+        } catch (Exception e) {
+            // Retourner une liste vide si la requête échoue
+            return new ArrayList<>();
+        }
     }
 
     /**

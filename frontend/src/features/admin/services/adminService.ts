@@ -31,6 +31,22 @@ export class AdminService {
   }
 
   /**
+   * Récupère les informations des clés étrangères d'une table
+   * Inclut les options avec labels lisibles
+   */
+  async getForeignKeyInfo(tableName: string) {
+    try {
+      const response = await this.axios.get(
+        `${CONFIG.API_URL}/admin/database/tables/${tableName}/foreign-keys`
+      );
+      return response.data;
+    } catch (error) {
+      // Retourner une liste vide si l'endpoint n'existe pas ou erreur
+      return { success: true, foreignKeys: [], count: 0 };
+    }
+  }
+
+  /**
    * Insère des données dans une table
    */
   async insertIntoTable(tableName: string, data: Record<string, any>) {
