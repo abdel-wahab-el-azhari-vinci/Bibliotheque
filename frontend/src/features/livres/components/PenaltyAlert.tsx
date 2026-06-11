@@ -1,5 +1,6 @@
+import styles from '../../../styles/components/PenaltyAlert.styles';
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View } from 'react-native';
 import { Text, Icon } from 'react-native-paper';
 
 interface PenaltyAlertProps {
@@ -35,35 +36,3 @@ export default function PenaltyAlert({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: '#FF6B6B',
-    borderRadius: 8,
-    marginBottom: 16,
-    overflow: 'hidden',
-  },
-  content: {
-    flexDirection: 'row',
-    padding: 12,
-    alignItems: 'flex-start',
-  },
-  textContainer: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  title: {
-    color: '#FFF',
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  message: {
-    color: '#FFF',
-    marginBottom: 6,
-    opacity: 0.95,
-  },
-  warning: {
-    color: '#FFF',
-    opacity: 0.9,
-    fontStyle: 'italic',
-  },
-});

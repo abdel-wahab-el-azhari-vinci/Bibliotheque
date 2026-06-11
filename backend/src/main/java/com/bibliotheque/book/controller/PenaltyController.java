@@ -5,13 +5,19 @@ import com.bibliotheque.shared.service.PenaltyService;
 import com.bibliotheque.book.dto.PenaltyDTO;
 import com.bibliotheque.book.dto.PayPenaltyRequest;
 import com.bibliotheque.book.dto.UserPenaltySummaryDTO;
+import com.bibliotheque.user.entity.User;
+import com.bibliotheque.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
 /**
@@ -24,16 +30,25 @@ import java.util.stream.Collectors;
 public class PenaltyController {
     
     private final PenaltyService penaltyService;
+    private final UserRepository userRepository;
+    
+    /**
+     * Extraire l'ID utilisateur de l'utilisateur authentifié
+     */
+    private Long getAuthenticatedUserId() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        User user = userRepository.findByEmail(auth.getName())
+            .orElseThrow(() -> new NoSuchElementException("User not found"));
+        return user.getId();
+    }
     
     /**
      * GET: Récupérer toutes les pénalités de l'utilisateur connecté
      * GET /api/penalties/my-penalties
      */
     @GetMapping("/my-penalties")
-    public ResponseEntity<List<PenaltyDTO>> getMyPenalties(
-            @RequestHeader("Authorization") String token) {
-        // TODO: Extraire userId du token JWT
-        Long userId = 1L;  // Pour le test
+    public ResponseEntity<List<PenaltyDTO>> getMyPenalties() {
+        Long userId = getAuthenticatedUserId();
         
         List<Penalty> penalties = penaltyService.getUserPenalties(userId);
         List<PenaltyDTO> dtos = penalties.stream()
@@ -48,10 +63,8 @@ public class PenaltyController {
      * GET /api/penalties/summary
      */
     @GetMapping("/summary")
-    public ResponseEntity<UserPenaltySummaryDTO> getPenaltySummary(
-            @RequestHeader("Authorization") String token) {
-        // TODO: Extraire userId du token JWT
-        Long userId = 1L;  // Pour le test
+    public ResponseEntity<UserPenaltySummaryDTO> getPenaltySummary() {
+        Long userId = getAuthenticatedUserId();
         
         long pendingCount = penaltyService.getUserPendingPenalties(userId).size();
         BigDecimal totalAmount = penaltyService.getUserTotalPendingAmount(userId);
@@ -71,10 +84,8 @@ public class PenaltyController {
      * GET /api/penalties/pending
      */
     @GetMapping("/pending")
-    public ResponseEntity<List<PenaltyDTO>> getPendingPenalties(
-            @RequestHeader("Authorization") String token) {
-        // TODO: Extraire userId du token JWT
-        Long userId = 1L;  // Pour le test
+    public ResponseEntity<List<PenaltyDTO>> getPendingPenalties() {
+        Long userId = getAuthenticatedUserId();
         
         List<Penalty> penalties = penaltyService.getUserPendingPenalties(userId);
         List<PenaltyDTO> dtos = penalties.stream()
@@ -101,7 +112,7 @@ public class PenaltyController {
     @PostMapping("/{penaltyId}/pay")
     public ResponseEntity<PenaltyDTO> payPenalty(
             @PathVariable Long penaltyId,
-            @RequestBody PayPenaltyRequest request) {
+            @Valid @RequestBody PayPenaltyRequest request) {
         try {
             Penalty penalty = penaltyService.payPenalty(penaltyId);
             return ResponseEntity.ok(convertToDTO(penalty));
@@ -143,13 +154,13 @@ public class PenaltyController {
     }
     
     /**
-     * Convertir Penalty Entity → PenaltyDTO
+     * Convertir une entité Penalty en DTO pour la réponse
      */
     private PenaltyDTO convertToDTO(Penalty penalty) {
         PenaltyDTO dto = new PenaltyDTO();
         dto.setId(penalty.getId());
         dto.setUserId(penalty.getUser().getId());
-        dto.setUserName(penalty.getUser().getEmail());  // Ou prénom/nom
+        dto.setUserName(penalty.getUser().getNom());
         dto.setLivreId(penalty.getLivre().getId());
         dto.setTitreLivre(penalty.getLivre().getTitre());
         dto.setPossessionId(penalty.getPossession().getId());

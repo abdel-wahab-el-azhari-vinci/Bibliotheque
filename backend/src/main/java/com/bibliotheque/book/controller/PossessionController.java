@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import com.bibliotheque.user.entity.User;
@@ -156,7 +157,7 @@ public class PossessionController {
      * Response: BorrowingResponse avec tous les détails
      */
     @PostMapping("/borrow")
-    public ResponseEntity<BorrowingResponse> borrow(@RequestBody BorrowRequest request) {
+    public ResponseEntity<BorrowingResponse> borrow(@Valid @RequestBody BorrowRequest request) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         User user = userRepository.findByEmail(auth.getName())
             .orElseThrow(() -> new NoSuchElementException("User not found"));

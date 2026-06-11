@@ -1,5 +1,6 @@
+import styles from '../../../styles/components/PenaltyBadge.styles';
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, TouchableOpacity } from 'react-native';
 import { Badge, Text, Icon } from 'react-native-paper';
 import { useAuth } from '../../../context/AuthContext';
 import { penaltiesApi } from '../../livres/api/penaltiesApi';
@@ -55,25 +56,3 @@ export default function PenaltyBadge({ onPress }: PenaltyBadgeProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 6,
-    marginHorizontal: 12,
-    marginVertical: 8,
-  },
-  containerWarning: {
-    backgroundColor: '#FFB74D',
-  },
-  containerBlocking: {
-    backgroundColor: '#FF6B6B',
-  },
-  text: {
-    color: '#FFF',
-    fontWeight: 'bold',
-    marginLeft: 8,
-  },
-});

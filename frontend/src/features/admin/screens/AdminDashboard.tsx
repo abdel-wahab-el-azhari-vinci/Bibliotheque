@@ -1,8 +1,6 @@
+import styles from '../../../styles/screens/admin/AdminDashboard.styles';
 import React, { useState } from 'react';
-import {
-  View,
-  StyleSheet,
-} from 'react-native';
+import { View } from 'react-native';
 import httpClientManager from '../../../shared/api/httpClient';
 import AdminService from '../services/adminService';
 import BackupService from '../services/backupService';
@@ -71,11 +69,5 @@ const AdminDashboard: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-});
 
 export default AdminDashboard;
