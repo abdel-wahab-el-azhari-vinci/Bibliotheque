@@ -1,12 +1,16 @@
 package com.bibliotheque.admin.controller;
 
+import com.bibliotheque.admin.dto.ForeignKeyInfoDTO;
 import com.bibliotheque.admin.service.TableManagementService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import java.util.*;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * REST Controller pour l'administration des tables
@@ -53,6 +57,31 @@ public class AdminTableController {
             response.put("schema", schema);
             response.put("columns", schema.size());
             return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return badRequest(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("success", false, "error", e.getMessage()));
+        }
+    }
+
+    /**
+     * GET /api/admin/database/tables/{tableName}/foreign-keys
+     * Récupère les informations des clés étrangères d'une table
+     * Inclut les options de chaque clé étrangère avec labels lisibles
+     */
+    @GetMapping("/tables/{tableName}/foreign-keys")
+    public ResponseEntity<Map<String, Object>> getForeignKeyInfo(@PathVariable String tableName) {
+        try {
+            List<ForeignKeyInfoDTO> foreignKeys = tableManagementService.getForeignKeyInfo(tableName);
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("tableName", tableName);
+            response.put("foreignKeys", foreignKeys);
+            response.put("count", foreignKeys.size());
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return badRequest(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("success", false, "error", e.getMessage()));
@@ -76,8 +105,7 @@ public class AdminTableController {
             response.put("tableName", tableName);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(Map.of("success", false, "error", e.getMessage()));
+            return badRequest(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("success", false, "error", e.getMessage()));
@@ -98,6 +126,8 @@ public class AdminTableController {
             response.put("data", data);
             response.put("rowCount", data.size());
             return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return badRequest(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("success", false, "error", e.getMessage()));
@@ -118,6 +148,8 @@ public class AdminTableController {
             response.put("dependents", dependents);
             response.put("count", dependents.size());
             return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return badRequest(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("success", false, "error", e.getMessage()));
@@ -141,11 +173,15 @@ public class AdminTableController {
             response.put("count", clearedTables.size());
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(Map.of("success", false, "error", e.getMessage()));
+            return badRequest(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("success", false, "error", e.getMessage()));
         }
+    }
+
+    private ResponseEntity<Map<String, Object>> badRequest(String message) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(Map.of("success", false, "error", message));
     }
 }

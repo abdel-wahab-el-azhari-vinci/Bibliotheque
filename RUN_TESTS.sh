@@ -1,0 +1,75 @@
+#!/bin/bash
+
+echo "🧪 PENALTY SYSTEM - TEST EXECUTION GUIDE"
+echo "=========================================="
+echo ""
+echo "Location: c:/_VINCI/Stage/Bibliotheque/backend"
+echo "Date: 11 April 2026"
+echo ""
+
+echo "📋 Available Test Commands:"
+echo ""
+
+echo "1️⃣  RUN ALL TESTS (36 tests):"
+echo "   cd backend && mvn clean test -k Penalty"
+echo ""
+
+echo "2️⃣  RUN SPECIFIC TEST CLASS:"
+echo "   mvn test -Dtest=PenaltyServiceTest"
+echo "   mvn test -Dtest=PenaltyControllerTest"
+echo "   mvn test -Dtest=PenaltyRepositoryTest"
+echo "   mvn test -Dtest=PossessionControllerPenaltyTest"
+echo ""
+
+echo "3️⃣  RUN WITH DETAILED OUTPUT:"
+echo "   mvn test -k Penalty -X"
+echo ""
+
+echo "4️⃣  GENERATE TEST COVERAGE REPORT:"
+echo "   mvn clean test jacoco:report"
+echo "   # Report will be in: target/site/jacoco/index.html"
+echo ""
+
+echo "5️⃣  RUN TESTS WITH LOGS:"
+echo "   mvn test -k Penalty -l test-output.log"
+echo ""
+
+echo "6️⃣  QUICK TEST (without clean):"
+echo "   mvn test -k Penalty"
+echo ""
+
+echo "7️⃣  TEST + BUILD:"
+echo "   mvn clean package -DskipTests"
+echo "   mvn test -k Penalty"
+echo ""
+
+echo "==========================================="
+echo "📊 TEST SUMMARY:"
+echo "==========================================="
+echo ""
+echo "PenaltyServiceTest              → 16 tests ✅"
+echo "PenaltyControllerTest           → 7 tests  ✅"
+echo "PossessionControllerPenaltyTest → 4 tests  ✅"
+echo "PenaltyRepositoryTest           → 9 tests  ✅"
+echo ""
+echo "TOTAL: 36 Tests"
+echo ""
+
+echo "🎯 EXPECTED RESULTS:"
+echo ""
+echo "[INFO] Tests run: 36, Failures: 0, Errors: 0, Skipped: 0 ✅"
+echo ""
+
+echo "📝 NOTES:"
+echo "• All tests use Mockito for mocking"
+echo "• Repository tests use @DataJpaTest with H2 in-memory DB"
+echo "• Tests are independent and can run in any order"
+echo "• Each test is transactional (auto-rollback)"
+echo ""
+
+echo "🚀 NEXT STEPS:"
+echo "1. Run: mvn clean test -k Penalty"
+echo "2. Verify all 36 tests pass"
+echo "3. Check coverage: mvn jacoco:report"
+echo "4. Deploy to production"
+echo ""

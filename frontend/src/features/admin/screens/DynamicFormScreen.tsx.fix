@@ -1,0 +1,2 @@
+# Find the line with thumbColor and replace it
+# thumbColor={value ? '#4caf50' : '#f4f3f4'} => thumbColor={value ? colors.success : colors.lightGray}

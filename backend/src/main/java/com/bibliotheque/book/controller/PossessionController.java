@@ -1,6 +1,7 @@
 package com.bibliotheque.book.controller;
 
 import com.bibliotheque.shared.service.PossessionService;
+import com.bibliotheque.shared.service.PenaltyService;
 import com.bibliotheque.shared.entity.Possession;
 import com.bibliotheque.book.dto.BorrowRequest;
 import com.bibliotheque.book.dto.PossessionResponse;
@@ -9,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import com.bibliotheque.user.entity.User;
@@ -30,6 +32,7 @@ import java.util.List;
 public class PossessionController {
     
     private final PossessionService possessionService;
+    private final PenaltyService penaltyService;
     private final UserRepository userRepository;
     
     /**
@@ -122,11 +125,28 @@ public class PossessionController {
     /**
      * PATCH /api/possessions/{id}/retourner
      * Marquer un livre comme retourné
+     * IMPORTANT: Auto-déclenche la création d'une pénalité si le retour est EN RETARD
      * Response: BorrowingResponse pour éviter les erreurs de sérialisation Hibernate
      */
     @PatchMapping("/{id}/retourner")
-    public ResponseEntity<BorrowingResponse> markAsReturned(@PathVariable Long id) {
+    public ResponseEntity<BorrowingResponse> markAsReturned(
+            @PathVariable Long id,
+            @RequestParam(required = false) LocalDate dateRetourActual) {
+        
+        // Récupérer la possession avant retour
         Possession possession = possessionService.markAsReturned(id);
+        
+        // Si dateRetourActual n'est pas fournie, utiliser aujourd'hui
+        LocalDate actualDate = dateRetourActual != null ? dateRetourActual : LocalDate.now();
+        
+        // VÉRIFIER PÉNALITÉ: Si retour en retard, créer automatiquement une pénalité
+        try {
+            penaltyService.createPenaltyIfLate(id, actualDate);
+        } catch (Exception e) {
+            // Log but don't fail: penalty creation error shouldn't block return
+            System.err.println("Penalty creation failed for possession " + id + ": " + e.getMessage());
+        }
+        
         return ResponseEntity.ok(toBorrowingResponse(possession));
     }
     
@@ -137,10 +157,16 @@ public class PossessionController {
      * Response: BorrowingResponse avec tous les détails
      */
     @PostMapping("/borrow")
-    public ResponseEntity<BorrowingResponse> borrow(@RequestBody BorrowRequest request) {
+    public ResponseEntity<BorrowingResponse> borrow(@Valid @RequestBody BorrowRequest request) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         User user = userRepository.findByEmail(auth.getName())
             .orElseThrow(() -> new NoSuchElementException("User not found"));
+        
+        // VÉRIFIER BLOCAGE: Impossible d'emprunter si penalties > 100€
+        if (!penaltyService.canBorrow(user.getId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .build();  // Blocage: trop de pénalités
+        }
         
         Possession possession = possessionService.borrowBook(request.getLivreId(), user.getId());
         
