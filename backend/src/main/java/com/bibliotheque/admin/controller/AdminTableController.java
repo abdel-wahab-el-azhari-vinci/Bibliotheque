@@ -7,7 +7,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import java.util.*;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * REST Controller pour l'administration des tables
@@ -54,6 +57,8 @@ public class AdminTableController {
             response.put("schema", schema);
             response.put("columns", schema.size());
             return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return badRequest(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("success", false, "error", e.getMessage()));
@@ -75,6 +80,8 @@ public class AdminTableController {
             response.put("foreignKeys", foreignKeys);
             response.put("count", foreignKeys.size());
             return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return badRequest(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("success", false, "error", e.getMessage()));
@@ -98,8 +105,7 @@ public class AdminTableController {
             response.put("tableName", tableName);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(Map.of("success", false, "error", e.getMessage()));
+            return badRequest(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("success", false, "error", e.getMessage()));
@@ -120,6 +126,8 @@ public class AdminTableController {
             response.put("data", data);
             response.put("rowCount", data.size());
             return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return badRequest(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("success", false, "error", e.getMessage()));
@@ -140,6 +148,8 @@ public class AdminTableController {
             response.put("dependents", dependents);
             response.put("count", dependents.size());
             return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return badRequest(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("success", false, "error", e.getMessage()));
@@ -163,11 +173,15 @@ public class AdminTableController {
             response.put("count", clearedTables.size());
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(Map.of("success", false, "error", e.getMessage()));
+            return badRequest(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("success", false, "error", e.getMessage()));
         }
+    }
+
+    private ResponseEntity<Map<String, Object>> badRequest(String message) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(Map.of("success", false, "error", message));
     }
 }
