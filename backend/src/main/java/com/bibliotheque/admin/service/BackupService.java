@@ -135,9 +135,22 @@ public class BackupService {
     /**
      * Restaure une base de données à partir d'un backup
      */
+    private static final java.util.regex.Pattern BACKUP_ID_PATTERN =
+            java.util.regex.Pattern.compile("^backup_\\d{4}-\\d{2}-\\d{2}_\\d{2}-\\d{2}-\\d{2}\\.sql$");
+
     public void restoreBackup(String backupId) throws Exception {
         ensureBackupDirectoryExists();
-        Path backupPath = Paths.get(backupDirectory, backupId);
+
+        if (backupId == null || !BACKUP_ID_PATTERN.matcher(backupId).matches()) {
+            throw new IllegalArgumentException("Invalid backup id: " + backupId);
+        }
+
+        Path backupDir = Paths.get(backupDirectory).toAbsolutePath().normalize();
+        Path backupPath = backupDir.resolve(backupId).normalize();
+
+        if (!backupPath.startsWith(backupDir)) {
+            throw new IllegalArgumentException("Invalid backup id: " + backupId);
+        }
 
         if (!Files.exists(backupPath)) {
             throw new FileNotFoundException("Backup not found: " + backupId);

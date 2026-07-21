@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -103,6 +104,7 @@ public class LivreController {
      * ✅ @Valid déclenche les validations du DTO
      */
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'LIBRARIAN')")
     public ResponseEntity<LivreResponse> createLivre(@Valid @RequestBody LivreRequest request) {
         
         Livre livre = livreService.createLivre(
@@ -124,6 +126,7 @@ public class LivreController {
      * Mettre à jour un livre existant
      */
     @PatchMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'LIBRARIAN')")
     public ResponseEntity<LivreResponse> updateLivre(
         @PathVariable Long id,
         @Valid @RequestBody LivreRequest request
@@ -151,6 +154,7 @@ public class LivreController {
      * Supprimer un livre (si aucune possession)
      */
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'LIBRARIAN')")
     public ResponseEntity<Void> deleteLivre(@PathVariable Long id) {
         livreService.deleteLivre(id);
         return ResponseEntity.noContent().build();

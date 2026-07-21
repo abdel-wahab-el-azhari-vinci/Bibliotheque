@@ -11,6 +11,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import com.bibliotheque.user.entity.User;
@@ -97,10 +99,11 @@ public class PossessionController {
     
     /**
      * POST /api/possessions/ajouter-stock
-     * Ajouter un exemplaire au stock
+     * Ajouter un exemplaire au stock (gestion d'inventaire: réservé aux ADMIN)
      * Body: { "livreId": 1, "userId": 1 }
      */
     @PostMapping("/ajouter-stock")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Possession> addToStock(
         @RequestParam Long livreId,
         @RequestParam Long userId
@@ -108,23 +111,26 @@ public class PossessionController {
         Possession possession = possessionService.addLivreToStock(livreId, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(possession);
     }
-    
+
     /**
      * PATCH /api/possessions/{id}/sortir
      * Marquer un livre comme sorti/emprunté
+     * Autorisé uniquement pour le propriétaire de la possession ou un ADMIN
      */
     @PatchMapping("/{id}/sortir")
     public ResponseEntity<Possession> markAsOut(
         @PathVariable Long id,
         @RequestParam(required = false) LocalDate dateRetour
     ) {
+        requireOwnerOrAdmin(id);
         Possession possession = possessionService.markAsOut(id, dateRetour);
         return ResponseEntity.ok(possession);
     }
-    
+
     /**
      * PATCH /api/possessions/{id}/retourner
      * Marquer un livre comme retourné
+     * Autorisé uniquement pour le propriétaire de la possession ou un ADMIN
      * IMPORTANT: Auto-déclenche la création d'une pénalité si le retour est EN RETARD
      * Response: BorrowingResponse pour éviter les erreurs de sérialisation Hibernate
      */
@@ -132,7 +138,9 @@ public class PossessionController {
     public ResponseEntity<BorrowingResponse> markAsReturned(
             @PathVariable Long id,
             @RequestParam(required = false) LocalDate dateRetourActual) {
-        
+
+        requireOwnerOrAdmin(id);
+
         // Récupérer la possession avant retour
         Possession possession = possessionService.markAsReturned(id);
         
@@ -173,6 +181,28 @@ public class PossessionController {
         return ResponseEntity.ok(toBorrowingResponse(possession));
     }
     
+    /**
+     * Vérifie que l'utilisateur authentifié est soit ADMIN, soit le propriétaire
+     * de la possession ciblée. Lève AccessDeniedException (403) sinon.
+     */
+    private void requireOwnerOrAdmin(Long possessionId) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean isAdmin = auth.getAuthorities().stream()
+            .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+
+        if (isAdmin) {
+            return;
+        }
+
+        Possession possession = possessionService.getById(possessionId);
+        User currentUser = userRepository.findByEmail(auth.getName())
+            .orElseThrow(() -> new NoSuchElementException("User not found"));
+
+        if (!possession.getUser().getId().equals(currentUser.getId())) {
+            throw new AccessDeniedException("Vous n'êtes pas autorisé à modifier cette possession");
+        }
+    }
+
     /**
      * Convertir une Possession en BorrowingResponse enrichie
      */

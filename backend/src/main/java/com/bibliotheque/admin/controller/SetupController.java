@@ -8,6 +8,7 @@ import com.bibliotheque.user.repository.StatusRepository;
 import com.bibliotheque.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,9 +16,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * Endpoint réservé aux ADMIN existants (ex: recréer/réinitialiser le compte admin par défaut).
+ * Ne doit JAMAIS être accessible anonymement: il révèle et fixe le mot de passe admin.
+ */
 @RestController
 @RequestMapping("/api/setup")
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('ADMIN')")
 public class SetupController {
 
     private final RoleRepository roleRepository;

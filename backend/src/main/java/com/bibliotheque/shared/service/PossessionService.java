@@ -31,6 +31,14 @@ public class PossessionService {
     private final UserRepository userRepository;
     
     /**
+     * Récupérer une possession par son id
+     */
+    public Possession getById(Long id) {
+        return possessionRepository.findById(id)
+            .orElseThrow(() -> new NoSuchElementException("Possession non trouvée"));
+    }
+
+    /**
      * Ajouter un exemplaire au stock
      */
     public Possession addLivreToStock(Long livreId, Long userId) {

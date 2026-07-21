@@ -4,6 +4,7 @@ import com.bibliotheque.auth.filter.JwtFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -26,6 +27,7 @@ import java.util.Arrays;
  * ✅ BCrypt pour les passwords
  */
 @Configuration
+@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
     
@@ -43,7 +45,7 @@ public class SecurityConfig {
             
             // Endpoints publics (accès sans token)
             .authorizeHttpRequests(authorize -> authorize
-                .requestMatchers("/api/setup/init", "/api/auth/login", "/api/auth/register", "/api/auth/refresh").permitAll()
+                .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/refresh").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
                 .anyRequest().authenticated()  // Tous les autres endpoints nécessitent authentication
             )
