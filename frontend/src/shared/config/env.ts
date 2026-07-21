@@ -6,9 +6,9 @@ const getApiUrl = () => {
     return 'http://localhost:8083/api';
   }
 
-  // Mobile: IP locale personnelle (Wi-Fi - 192.168.129.6)
+  // Mobile: IP locale personnelle (Wi-Fi - 10.81.217.62)
   // Ne pas utiliser 5G - utiliser votre IP personnelle
-  return 'http://192.168.129.6:8083/api';
+  return 'http://10.81.217.62:8083/api';
 };
 
 export const CONFIG = {
