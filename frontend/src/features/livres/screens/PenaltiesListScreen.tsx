@@ -2,9 +2,10 @@ import styles from '../../../styles/screens/livres/PenaltiesListScreen.styles';
 import React, { useEffect, useState } from 'react';
 import { View, ScrollView, RefreshControl, Alert, ActivityIndicator } from 'react-native';
 import { Text, Card, Chip, Icon } from 'react-native-paper';
-import { useAuth } from '../../../context/AuthContext';
 import { penaltiesApi, Penalty, UserPenaltySummary } from '../api/penaltiesApi';
 import PenaltyAlert from '../components/PenaltyAlert';
+import { useAuth } from '../../auth/context/AuthContext';
+import AdminPenaltiesScreen from '../../admin/screens/AdminPenaltiesScreen';
 
 interface PenaltiesListScreenProps {
   navigation: any;
@@ -13,26 +14,31 @@ interface PenaltiesListScreenProps {
 export default function PenaltiesListScreen({
   navigation,
 }: PenaltiesListScreenProps) {
-  const { authState } = useAuth();
-  const token = authState?.access_token || '';
+  const { user } = useAuth();
 
+  if (user?.role === 'ADMIN') {
+    return <AdminPenaltiesScreen onBack={() => navigation.goBack()} />;
+  }
+
+  return <UserPenaltiesView />;
+}
+
+function UserPenaltiesView() {
   const [penalties, setPenalties] = useState<Penalty[]>([]);
   const [summary, setSummary] = useState<UserPenaltySummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
-    if (token) {
-      loadPenalties();
-    }
-  }, [token]);
+    loadPenalties();
+  }, []);
 
   const loadPenalties = async () => {
     try {
       setLoading(true);
       const [penaltiesData, summaryData] = await Promise.all([
-        penaltiesApi.getMyPenalties(token),
-        penaltiesApi.getPenaltySummary(token),
+        penaltiesApi.getMyPenalties(),
+        penaltiesApi.getPenaltySummary(),
       ]);
 
       setPenalties(penaltiesData);
@@ -241,7 +247,7 @@ export default function PenaltiesListScreen({
                 <View style={styles.paidBox}>
                   <Icon source="check-circle" size={18} color="#51CF66" />
                   <Text variant="bodySmall" style={styles.paidText}>
-                    Payée le {new Date(penalty.datePayement!).toLocaleDateString('fr-FR')}
+                    Payée le {new Date(penalty.datePaiement!).toLocaleDateString('fr-FR')}
                   </Text>
                 </View>
               )}

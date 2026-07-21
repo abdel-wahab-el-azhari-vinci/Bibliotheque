@@ -13,15 +13,14 @@ import {
   Text,
 } from 'react-native';
 import { useAuth } from '../../auth/context/AuthContext';
-import httpClientManager from '../../../shared/api/httpClient';
 import { penaltiesApi, Penalty } from '../../livres/api/penaltiesApi';
 
 interface AdminPenaltiesScreenProps {
-  navigation: any;
+  onBack: () => void;
 }
 
 export default function AdminPenaltiesScreen({
-  navigation,
+  onBack,
 }: AdminPenaltiesScreenProps) {
   const { isAuthenticated } = useAuth();
 
@@ -46,14 +45,7 @@ export default function AdminPenaltiesScreen({
   const loadAllPenalties = async () => {
     try {
       setLoading(true);
-      const token = await httpClientManager.getAccessToken();
-
-      if (!token) {
-        Alert.alert('Erreur', 'Vous devez être connecté pour voir les pénalités');
-        return;
-      }
-
-      const response = await penaltiesApi.getMyPenalties(token);
+      const response = await penaltiesApi.getAllPenalties();
       setPenalties(response);
     } catch (error) {
       console.error('Failed to load penalties:', error);
@@ -72,21 +64,21 @@ export default function AdminPenaltiesScreen({
     }
   };
 
-  const handleMarkAsPaid = async (penalty: Penalty) => {
+  const handleMarkAsPaid = (penalty: Penalty) => {
     setSelectedPenalty(penalty);
     setActionType('pay');
     setReason('');
     setDialogVisible(true);
   };
 
-  const handleCancel = async (penalty: Penalty) => {
+  const handleCancel = (penalty: Penalty) => {
     setSelectedPenalty(penalty);
     setActionType('cancel');
     setReason('');
     setDialogVisible(true);
   };
 
-  const handleWaive = async (penalty: Penalty) => {
+  const handleWaive = (penalty: Penalty) => {
     setSelectedPenalty(penalty);
     setActionType('waive');
     setReason('');
@@ -98,30 +90,24 @@ export default function AdminPenaltiesScreen({
 
     try {
       setProcessing(true);
-      const token = await httpClientManager.getAccessToken();
-
-      if (!token) {
-        Alert.alert('Erreur', 'Session expirée, veuillez vous reconnecter');
-        return;
-      }
 
       if (actionType === 'pay') {
-        await penaltiesApi.payPenalty(selectedPenalty.id, 'PAYMENT_IN_PERSON', token);
-        Alert.alert('Succès', `Pénalité ${selectedPenalty.id} marquée comme payée`);
+        await penaltiesApi.payPenalty(selectedPenalty.id, 'PAYMENT_IN_PERSON');
+        Alert.alert('Succès', `Pénalité marquée comme payée`);
       } else if (actionType === 'cancel') {
         if (!reason.trim()) {
           Alert.alert('Erreur', 'Veuillez entrer une raison');
           return;
         }
-        await penaltiesApi.cancelPenalty(selectedPenalty.id, reason, token);
-        Alert.alert('Succès', `Pénalité ${selectedPenalty.id} annulée`);
+        await penaltiesApi.cancelPenalty(selectedPenalty.id, reason);
+        Alert.alert('Succès', `Pénalité annulée`);
       } else if (actionType === 'waive') {
         if (!reason.trim()) {
           Alert.alert('Erreur', 'Veuillez entrer une raison');
           return;
         }
-        await penaltiesApi.waivePenalty(selectedPenalty.id, reason, token);
-        Alert.alert('Succès', `Pénalité ${selectedPenalty.id} graciée`);
+        await penaltiesApi.waivePenalty(selectedPenalty.id, reason);
+        Alert.alert('Succès', `Pénalité graciée`);
       }
 
       setDialogVisible(false);
@@ -129,7 +115,7 @@ export default function AdminPenaltiesScreen({
       await loadAllPenalties();
     } catch (error) {
       console.error('Failed to process action:', error);
-      Alert.alert('Erreur', 'L\'action a échoué');
+      Alert.alert('Erreur', "L'action a échoué");
     } finally {
       setProcessing(false);
     }
@@ -140,9 +126,9 @@ export default function AdminPenaltiesScreen({
       case 'PENDING':
         return '#FF6B6B';
       case 'PAID':
-        return '#51CF66';
+        return '#34C759';
       case 'CANCELLED':
-        return '#FFD43B';
+        return '#FFB400';
       case 'WAIVED':
         return '#A78BFA';
       default:
@@ -155,7 +141,7 @@ export default function AdminPenaltiesScreen({
       PENDING: 'En attente',
       PAID: 'Payée',
       CANCELLED: 'Annulée',
-      WAIVED: 'Annulée (grâce)',
+      WAIVED: 'Graciée',
     };
     return labels[status] || status;
   };
@@ -163,97 +149,118 @@ export default function AdminPenaltiesScreen({
   if (loading) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#0066CC" />
+        <ActivityIndicator size="large" color="#007AFF" />
         <Text style={styles.loadingText}>Chargement...</Text>
       </View>
     );
   }
 
   const pendingPenalties = penalties.filter((p) => p.status === 'PENDING');
+  const historyPenalties = penalties.filter((p) => p.status !== 'PENDING');
+  const totalPendingAmount = pendingPenalties.reduce((sum, p) => sum + p.montantTotal, 0);
 
-  return (
-    <ScrollView
-      style={styles.container}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-    >
-      <View style={styles.header}>
-        <Text style={[styles.headerTitle, { fontSize: 24 }]}>Gestion des pénalités</Text>
-        <View style={styles.statsRow}>
-          <View style={styles.statCard}>
-            <View>
-              <Text style={styles.statLabel}>En attente</Text>
-              <Text style={styles.statValue}>{pendingPenalties.length}</Text>
-            </View>
-          </View>
+  const renderPenaltyCard = (penalty: Penalty, actionable: boolean) => (
+    <View key={penalty.id} style={styles.penaltyCard}>
+      <View style={styles.penaltyHeader}>
+        <View style={styles.penaltyInfo}>
+          <Text style={styles.livreTitle}>{penalty.titreLivre}</Text>
+          <Text style={styles.userName}>{penalty.userName}</Text>
+        </View>
+        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(penalty.status) }]}>
+          <Text style={styles.statusBadgeText}>{getStatusLabel(penalty.status)}</Text>
         </View>
       </View>
 
-      {pendingPenalties.length === 0 ? (
-        <View style={styles.emptyCard}>
-          <Text style={{ fontSize: 48, marginBottom: 12 }}>✓</Text>
-          <Text style={styles.emptyText}>Aucune pénalité en attente</Text>
+      <View style={styles.details}>
+        <View style={styles.detailRow}>
+          <Text style={styles.detailLabel}>Jours de retard</Text>
+          <Text style={styles.detailValue}>{penalty.nombreJoursRetard} j.</Text>
         </View>
-      ) : (
-        pendingPenalties.map((penalty) => (
-          <View key={penalty.id} style={styles.penaltyCard}>
-            <View style={styles.penaltyHeader}>
-              <View style={styles.penaltyInfo}>
-                <Text style={styles.livreTitle}>{penalty.titreLivre}</Text>
-                <Text style={styles.userName}>{penalty.userName}</Text>
-              </View>
-              <View
-                style={{
-                  backgroundColor: getStatusColor(penalty.status),
-                  paddingHorizontal: 10,
-                  paddingVertical: 6,
-                  borderRadius: 999,
-                }}
-              >
-                <Text style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}>
-                  {getStatusLabel(penalty.status)}
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.details}>
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Jours de retard:</Text>
-                <Text style={styles.detailValue}>{penalty.nombreJoursRetard} j.</Text>
-              </View>
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Montant:</Text>
-                <Text style={[styles.detailValue, { color: '#FF6B6B' }]}>€{penalty.montantTotal.toFixed(2)}</Text>
-              </View>
-            </View>
-
-            <View style={styles.actions}>
-              <TouchableOpacity
-                onPress={() => handleMarkAsPaid(penalty)}
-                style={[styles.payButton, { paddingVertical: 10, borderRadius: 8, alignItems: 'center' }]}
-              >
-                <Text style={{ color: '#fff', fontWeight: '600' }}>Payée</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => handleCancel(penalty)}
-                style={[styles.cancelButton, { paddingVertical: 10, borderRadius: 8, borderWidth: 1, borderColor: '#999', alignItems: 'center' }]}
-              >
-                <Text style={{ color: '#333', fontWeight: '600' }}>Annuler</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => handleWaive(penalty)}
-                style={[styles.waiveButton, { paddingVertical: 10, borderRadius: 8, borderWidth: 1, borderColor: '#999', alignItems: 'center' }]}
-              >
-                <Text style={{ color: '#333', fontWeight: '600' }}>Gracier</Text>
-              </TouchableOpacity>
-            </View>
+        <View style={styles.detailRow}>
+          <Text style={styles.detailLabel}>Montant</Text>
+          <Text style={[styles.detailValue, styles.amountValue]}>
+            €{penalty.montantTotal.toFixed(2)}
+          </Text>
+        </View>
+        {penalty.notes && (
+          <View style={styles.notesBox}>
+            <Text style={styles.notesLabel}>Note:</Text>
+            <Text style={styles.notesText}>{penalty.notes}</Text>
           </View>
-        ))
+        )}
+      </View>
+
+      {actionable && (
+        <View style={styles.actions}>
+          <TouchableOpacity
+            onPress={() => handleMarkAsPaid(penalty)}
+            style={[styles.actionButton, styles.payButton]}
+          >
+            <Text style={styles.actionButtonTextLight}>Payée</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => handleCancel(penalty)}
+            style={[styles.actionButton, styles.cancelButton]}
+          >
+            <Text style={styles.actionButtonTextDark}>Annuler</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => handleWaive(penalty)}
+            style={[styles.actionButton, styles.waiveButton]}
+          >
+            <Text style={styles.actionButtonTextDark}>Gracier</Text>
+          </TouchableOpacity>
+        </View>
       )}
+    </View>
+  );
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={onBack} style={styles.backButton}>
+          <Text style={styles.backButtonText}>← Retour</Text>
+        </TouchableOpacity>
+        <Text style={styles.title}>Gestion des pénalités</Text>
+        <View style={{ width: 60 }} />
+      </View>
+
+      <View style={styles.statsRow}>
+        <View style={styles.statCard}>
+          <Text style={styles.statLabel}>En attente</Text>
+          <Text style={styles.statValue}>{pendingPenalties.length}</Text>
+        </View>
+        <View style={styles.statCard}>
+          <Text style={styles.statLabel}>Montant total</Text>
+          <Text style={styles.statValue}>€{totalPendingAmount.toFixed(2)}</Text>
+        </View>
+      </View>
+
+      <ScrollView
+        contentContainerStyle={styles.listContent}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      >
+        {pendingPenalties.length === 0 ? (
+          <View style={styles.emptyCard}>
+            <Text style={styles.emptyIcon}>✓</Text>
+            <Text style={styles.emptyText}>Aucune pénalité en attente</Text>
+          </View>
+        ) : (
+          pendingPenalties.map((penalty) => renderPenaltyCard(penalty, true))
+        )}
+
+        {historyPenalties.length > 0 && (
+          <>
+            <Text style={styles.sectionTitle}>Historique</Text>
+            {historyPenalties.map((penalty) => renderPenaltyCard(penalty, false))}
+          </>
+        )}
+      </ScrollView>
 
       <Modal visible={dialogVisible} transparent animationType="fade" onRequestClose={() => setDialogVisible(false)}>
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.35)', padding: 20 }}>
-          <View style={{ width: '100%', backgroundColor: '#fff', borderRadius: 12, padding: 20 }}>
-            <Text style={{ fontSize: 18, fontWeight: '700', marginBottom: 12 }}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalBox}>
+            <Text style={styles.modalTitle}>
               {actionType === 'pay' && 'Marquer comme payée'}
               {actionType === 'cancel' && 'Annuler la pénalité'}
               {actionType === 'waive' && 'Gracier la pénalité'}
@@ -277,17 +284,17 @@ export default function AdminPenaltiesScreen({
               </>
             )}
 
-            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 16 }}>
-              <Pressable onPress={() => setDialogVisible(false)} disabled={processing} style={{ marginRight: 12, paddingVertical: 10, paddingHorizontal: 12 }}>
-                <Text style={{ color: '#666' }}>Annuler</Text>
+            <View style={styles.modalActions}>
+              <Pressable onPress={() => setDialogVisible(false)} disabled={processing} style={{ paddingVertical: 10, paddingHorizontal: 12 }}>
+                <Text style={styles.modalCancelText}>Annuler</Text>
               </Pressable>
-              <Pressable onPress={confirmAction} disabled={processing} style={{ paddingVertical: 10, paddingHorizontal: 12, backgroundColor: '#0066CC', borderRadius: 8 }}>
-                <Text style={{ color: '#fff', fontWeight: '600' }}>{processing ? '...' : 'Confirmer'}</Text>
+              <Pressable onPress={confirmAction} disabled={processing} style={styles.modalConfirmButton}>
+                <Text style={styles.modalConfirmText}>{processing ? '...' : 'Confirmer'}</Text>
               </Pressable>
             </View>
           </View>
         </View>
       </Modal>
-    </ScrollView>
+    </View>
   );
 }

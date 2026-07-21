@@ -10,6 +10,7 @@ import { formatDateFR, getDaysUntilReturn } from '../utils/dateUtils';
 type RootStackParamList = {
   Possessions: undefined;
   LivresList: undefined;
+  Penalties: undefined;
 };
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Possessions'>;
@@ -209,7 +210,12 @@ export default function PossessionListScreen({ navigation }: Props) {
           <Ionicons name="chevron-back" size={28} color={colors.white} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Mes emprunts</Text>
-        <View style={styles.spacer} />
+        <TouchableOpacity
+          onPress={() => navigation.navigate('Penalties')}
+          style={styles.backButton}
+        >
+          <Ionicons name="alert-circle-outline" size={26} color={colors.white} />
+        </TouchableOpacity>
       </View>
 
       {/* Content */}

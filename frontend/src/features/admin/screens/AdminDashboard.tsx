@@ -17,7 +17,7 @@ type ScreenType = 'list' | 'form' | 'backups';
 const AdminDashboard: React.FC = () => {
   const [currentScreen, setCurrentScreen] = useState<ScreenType>('list');
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
-  
+
   // Utiliser httpClientManager qui gère les tokens JWT automatiquement
   const [adminService] = useState(
     () => new AdminService(httpClientManager.getClient())

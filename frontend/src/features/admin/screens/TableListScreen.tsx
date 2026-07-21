@@ -9,10 +9,10 @@ interface Props {
   onBackupClick?: () => void;
 }
 
-const TableListScreen: React.FC<Props> = ({ 
-  adminService, 
+const TableListScreen: React.FC<Props> = ({
+  adminService,
   onSelectTable,
-  onBackupClick 
+  onBackupClick,
 }) => {
   const [tables, setTables] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);

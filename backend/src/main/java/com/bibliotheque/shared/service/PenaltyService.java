@@ -79,6 +79,13 @@ public class PenaltyService {
     }
     
     /**
+     * Récupérer toutes les pénalités, tous utilisateurs confondus (admin)
+     */
+    public List<Penalty> getAllPenalties() {
+        return penaltyRepository.findAllByOrderByDateCreationDesc();
+    }
+
+    /**
      * Récupérer toutes les pénalités d'un utilisateur
      */
     public List<Penalty> getUserPenalties(Long userId) {

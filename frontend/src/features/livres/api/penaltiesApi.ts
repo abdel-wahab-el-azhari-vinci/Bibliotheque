@@ -1,5 +1,4 @@
-import axios from 'axios';
-import { API_BASE_URL } from '../../../config/env';
+import { httpClient } from '../../../shared/api/httpClient';
 
 export interface Penalty {
   id: number;
@@ -11,7 +10,7 @@ export interface Penalty {
   dateCreation: string;
   dateExpirationEmprunt: string;
   dateRetourActual: string;
-  datePayement?: string;
+  datePaiement?: string;
   nombreJoursRetard: number;
   tarifJournalier: number;
   montantTotal: number;
@@ -26,151 +25,76 @@ export interface UserPenaltySummary {
   canBorrow: boolean;
 }
 
-export interface PayPenaltyRequest {
-  penaltyId: number;
-  paymentMethod: string;
-}
-
 class PenaltiesApi {
-  private baseUrl = `${API_BASE_URL}/api/penalties`;
+  /**
+   * Get all penalties, all users (ADMIN only)
+   */
+  async getAllPenalties(): Promise<Penalty[]> {
+    const response = await httpClient.get<Penalty[]>('/penalties');
+    return response.data;
+  }
 
   /**
    * Get all penalties for the authenticated user
    */
-  async getMyPenalties(token: string): Promise<Penalty[]> {
-    try {
-      const response = await axios.get<Penalty[]>(
-        `${this.baseUrl}/my-penalties`,
-        this.getHeaders(token)
-      );
-      return response.data;
-    } catch (error) {
-      console.error('Failed to fetch user penalties:', error);
-      throw error;
-    }
+  async getMyPenalties(): Promise<Penalty[]> {
+    const response = await httpClient.get<Penalty[]>('/penalties/my-penalties');
+    return response.data;
   }
 
   /**
    * Get pending penalties only
    */
-  async getPendingPenalties(token: string): Promise<Penalty[]> {
-    try {
-      const response = await axios.get<Penalty[]>(
-        `${this.baseUrl}/pending`,
-        this.getHeaders(token)
-      );
-      return response.data;
-    } catch (error) {
-      console.error('Failed to fetch pending penalties:', error);
-      throw error;
-    }
+  async getPendingPenalties(): Promise<Penalty[]> {
+    const response = await httpClient.get<Penalty[]>('/penalties/pending');
+    return response.data;
   }
 
   /**
    * Get penalty summary (includes canBorrow flag for blocking logic)
    */
-  async getPenaltySummary(token: string): Promise<UserPenaltySummary> {
-    try {
-      const response = await axios.get<UserPenaltySummary>(
-        `${this.baseUrl}/summary`,
-        this.getHeaders(token)
-      );
-      return response.data;
-    } catch (error) {
-      console.error('Failed to fetch penalty summary:', error);
-      throw error;
-    }
+  async getPenaltySummary(): Promise<UserPenaltySummary> {
+    const response = await httpClient.get<UserPenaltySummary>('/penalties/summary');
+    return response.data;
   }
 
   /**
    * Get details of a specific penalty
    */
-  async getPenaltyDetails(penaltyId: number, token: string): Promise<Penalty> {
-    try {
-      const response = await axios.get<Penalty>(
-        `${this.baseUrl}/${penaltyId}`,
-        this.getHeaders(token)
-      );
-      return response.data;
-    } catch (error) {
-      console.error(`Failed to fetch penalty ${penaltyId}:`, error);
-      throw error;
-    }
+  async getPenaltyDetails(penaltyId: number): Promise<Penalty> {
+    const response = await httpClient.get<Penalty>(`/penalties/${penaltyId}`);
+    return response.data;
   }
 
   /**
    * Pay a penalty
    */
-  async payPenalty(
-    penaltyId: number,
-    paymentMethod: string,
-    token: string
-  ): Promise<Penalty> {
-    try {
-      const response = await axios.post<Penalty>(
-        `${this.baseUrl}/${penaltyId}/pay`,
-        { penaltyId, paymentMethod },
-        this.getHeaders(token)
-      );
-      return response.data;
-    } catch (error) {
-      console.error(`Failed to pay penalty ${penaltyId}:`, error);
-      throw error;
-    }
+  async payPenalty(penaltyId: number, paymentMethod: string): Promise<Penalty> {
+    const response = await httpClient.post<Penalty>(`/penalties/${penaltyId}/pay`, {
+      penaltyId,
+      paymentMethod,
+    });
+    return response.data;
   }
 
   /**
    * Cancel a penalty (admin only)
    */
-  async cancelPenalty(
-    penaltyId: number,
-    reason: string,
-    token: string
-  ): Promise<Penalty> {
-    try {
-      const response = await axios.post<Penalty>(
-        `${this.baseUrl}/${penaltyId}/cancel?reason=${encodeURIComponent(reason)}`,
-        {},
-        this.getHeaders(token)
-      );
-      return response.data;
-    } catch (error) {
-      console.error(`Failed to cancel penalty ${penaltyId}:`, error);
-      throw error;
-    }
+  async cancelPenalty(penaltyId: number, reason: string): Promise<Penalty> {
+    const response = await httpClient.post<Penalty>(
+      `/penalties/${penaltyId}/cancel?reason=${encodeURIComponent(reason)}`
+    );
+    return response.data;
   }
 
   /**
    * Waive a penalty (admin only)
    */
-  async waivePenalty(
-    penaltyId: number,
-    reason: string,
-    token: string
-  ): Promise<Penalty> {
-    try {
-      const response = await axios.post<Penalty>(
-        `${this.baseUrl}/${penaltyId}/waive?reason=${encodeURIComponent(reason)}`,
-        {},
-        this.getHeaders(token)
-      );
-      return response.data;
-    } catch (error) {
-      console.error(`Failed to waive penalty ${penaltyId}:`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * Helper: Get authorization headers
-   */
-  private getHeaders(token: string) {
-    return {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    };
+  async waivePenalty(penaltyId: number, reason: string): Promise<Penalty> {
+    const response = await httpClient.post<Penalty>(
+      `/penalties/${penaltyId}/waive?reason=${encodeURIComponent(reason)}`
+    );
+    return response.data;
   }
 }
 

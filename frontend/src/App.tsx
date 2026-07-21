@@ -2,6 +2,7 @@ import React from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { PaperProvider } from 'react-native-paper';
 import { AuthProvider, useAuth } from './features/auth/context/AuthContext';
 import LoginScreen from './features/auth/screens/LoginScreen';
 import RegisterScreen from './features/auth/screens/RegisterScreen';
@@ -9,6 +10,7 @@ import LivresListScreen from './features/livres/screens/LivresListScreen';
 import LivreDetailScreen from './features/livres/screens/LivreDetailScreen';
 import LivreAddScreen from './features/livres/screens/LivreAddScreen';
 import PossessionListScreen from './features/livres/screens/PossessionListScreen';
+import PenaltiesListScreen from './features/livres/screens/PenaltiesListScreen';
 import AdminDashboard from './features/admin/screens/AdminDashboard';
 
 type RootStackParamList = {
@@ -18,6 +20,7 @@ type RootStackParamList = {
   LivreDetail: { id: number };
   LivreAdd: undefined;
   Possessions: undefined;
+  Penalties: undefined;
   AdminPanel: undefined;
 };
 
@@ -41,6 +44,7 @@ function AppStack() {
       <Stack.Screen name="LivreDetail" component={LivreDetailScreen} />
       <Stack.Screen name="LivreAdd" component={LivreAddScreen} />
       <Stack.Screen name="Possessions" component={PossessionListScreen} />
+      <Stack.Screen name="Penalties" component={PenaltiesListScreen} />
       <Stack.Screen name="AdminPanel" component={AdminDashboard} />
     </Stack.Navigator>
   );
@@ -64,10 +68,12 @@ function RootNavigator() {
 /** ✅ App root avec AuthProvider */
 export default function App() {
   return (
-    <AuthProvider>
-      <NavigationContainer>
-        <RootNavigator />
-      </NavigationContainer>
-    </AuthProvider>
+    <PaperProvider>
+      <AuthProvider>
+        <NavigationContainer>
+          <RootNavigator />
+        </NavigationContainer>
+      </AuthProvider>
+    </PaperProvider>
   );
 }

@@ -12,6 +12,9 @@ import java.util.Optional;
 @Repository
 public interface PenaltyRepository extends JpaRepository<Penalty, Long> {
     
+    // Récupérer toutes les pénalités (tous utilisateurs), les plus récentes en premier
+    List<Penalty> findAllByOrderByDateCreationDesc();
+
     // Récupérer toutes les pénalités d'un utilisateur
     List<Penalty> findByUserId(Long userId);
     

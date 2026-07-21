@@ -10,6 +10,8 @@ import com.bibliotheque.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -42,6 +44,21 @@ public class PenaltyController {
         return user.getId();
     }
     
+    /**
+     * GET: Récupérer toutes les pénalités, tous utilisateurs confondus (ADMIN uniquement)
+     * GET /api/penalties
+     */
+    @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<PenaltyDTO>> getAllPenalties() {
+        List<Penalty> penalties = penaltyService.getAllPenalties();
+        List<PenaltyDTO> dtos = penalties.stream()
+            .map(this::convertToDTO)
+            .collect(Collectors.toList());
+
+        return ResponseEntity.ok(dtos);
+    }
+
     /**
      * GET: Récupérer toutes les pénalités de l'utilisateur connecté
      * GET /api/penalties/my-penalties
@@ -101,6 +118,7 @@ public class PenaltyController {
      */
     @GetMapping("/{penaltyId}")
     public ResponseEntity<PenaltyDTO> getPenaltyDetails(@PathVariable Long penaltyId) {
+        requireOwnerOrAdmin(penaltyId);
         Penalty penalty = penaltyService.getPenaltyDetails(penaltyId);
         return ResponseEntity.ok(convertToDTO(penalty));
     }
@@ -114,18 +132,20 @@ public class PenaltyController {
             @PathVariable Long penaltyId,
             @Valid @RequestBody PayPenaltyRequest request) {
         try {
+            requireOwnerOrAdmin(penaltyId);
             Penalty penalty = penaltyService.payPenalty(penaltyId);
             return ResponseEntity.ok(convertToDTO(penalty));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         }
     }
-    
+
     /**
      * POST: Annuler une pénalité (Admin only)
      * POST /api/penalties/{penaltyId}/cancel
      */
     @PostMapping("/{penaltyId}/cancel")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<PenaltyDTO> cancelPenalty(
             @PathVariable Long penaltyId,
             @RequestParam String reason) {
@@ -136,12 +156,13 @@ public class PenaltyController {
             return ResponseEntity.badRequest().build();
         }
     }
-    
+
     /**
      * POST: Faire grâce à une pénalité (Admin only)
      * POST /api/penalties/{penaltyId}/waive
      */
     @PostMapping("/{penaltyId}/waive")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<PenaltyDTO> waivePenalty(
             @PathVariable Long penaltyId,
             @RequestParam String reason) {
@@ -150,6 +171,27 @@ public class PenaltyController {
             return ResponseEntity.ok(convertToDTO(penalty));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
+        }
+    }
+
+    /**
+     * Vérifie que l'utilisateur authentifié est soit ADMIN, soit le propriétaire
+     * de la pénalité ciblée. Lève AccessDeniedException (403) sinon.
+     */
+    private void requireOwnerOrAdmin(Long penaltyId) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean isAdmin = auth.getAuthorities().stream()
+            .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+
+        if (isAdmin) {
+            return;
+        }
+
+        Penalty penalty = penaltyService.getPenaltyDetails(penaltyId);
+        Long currentUserId = getAuthenticatedUserId();
+
+        if (!penalty.getUser().getId().equals(currentUserId)) {
+            throw new AccessDeniedException("Vous n'êtes pas autorisé à modifier cette pénalité");
         }
     }
     
